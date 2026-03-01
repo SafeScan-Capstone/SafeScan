@@ -152,7 +152,7 @@ If you'd like to improve SafeScan — whether it's a new feature, a bug fix, bet
  3. Commit your changes (`git commit -m 'Add your feature'`)                                                                                                                                               
  4. Push to your branch (`git push origin feature/your-feature-name`)                                                                                                                                      
  5. Open a Pull Request                                                                                                                                                                                                                                                                                                                                                                                     
-  +For major changes, please open an issue first to discuss what you'd like to change.                                                                                                                       
+For major changes, please open an issue first to discuss what you'd like to change.                                                                                                                       
  ## License 
 
  ISC
