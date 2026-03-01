@@ -12,14 +12,14 @@ const axios = require('axios');
 
 const TIMEOUT_MS = 20000; // 20 seconds timeout
 
-// Get API key - ONLY from AI_API_KEY (no fallback)
+// Get API key - Supports AI_API_KEY with OPENAI_API_KEY as fallback
 function getApiKey() {
-  return process.env.AI_API_KEY;
+  return process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
 }
 
 // Check if API key is configured
 function isApiKeyConfigured() {
-  return !!process.env.AI_API_KEY;
+  return !!getApiKey();
 }
 
 // Get provider configuration and log it (never log the API key value)
@@ -44,7 +44,7 @@ async function explainIngredients(ingredients) {
   const { provider, apiKey, model } = getProviderConfig();
 
   if (!apiKey) {
-    throw new Error('AI not configured. Missing AI_API_KEY');
+    throw new Error('AI_API_KEY is not configured');
   }
 
   const prompt = buildPrompt(ingredients);

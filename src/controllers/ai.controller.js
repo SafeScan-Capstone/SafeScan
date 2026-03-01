@@ -8,7 +8,23 @@ const { explainIngredients, checkHealth } = require('../services/aiExplain.servi
 exports.health = async (req, res) => {
   try {
     const healthStatus = await checkHealth();
-    res.json(healthStatus);
+    
+    // Return 200 if available, 503 if unavailable
+    if (healthStatus.status === 'available') {
+      return res.status(200).json({
+        status: 'available',
+        provider: healthStatus.provider,
+        model: healthStatus.model
+      });
+    }
+    
+    // Return 503 with unavailable status
+    return res.status(503).json({
+      status: 'unavailable',
+      provider: healthStatus.provider,
+      model: healthStatus.model,
+      message: 'AI_API_KEY is not configured'
+    });
   } catch (error) {
     console.error('AI health check error:', error.message);
     res.status(503).json({ status: 'error', message: error.message });
@@ -46,7 +62,7 @@ exports.explainIngredients = async (req, res) => {
     // Check if it's a configuration error
     if (error.message.includes('not configured') || error.message.includes('Missing AI_API_KEY')) {
       return res.status(503).json({
-        error: 'AI not configured. Missing AI_API_KEY'
+        error: 'AI service unavailable'
       });
     }
 
