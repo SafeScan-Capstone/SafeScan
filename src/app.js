@@ -77,11 +77,15 @@ if (!process.env.CORS_ORIGIN) {
 }
 
 // Security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // Disable CSP for API
-  })
-);
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for API
+}));
+
+// CORS for specific origin
+app.use(cors({
+  origin: process.env.CORS_ORIGIN,
+  credentials: true,
+}));
 
 // Request ID for easier debugging
 app.use((req, res, next) => {
