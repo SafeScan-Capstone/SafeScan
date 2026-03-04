@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import ArrowIcon from '../../assets/icons/arrow-right.svg?react'
 
 export default function Button({
@@ -14,7 +15,7 @@ export default function Button({
 }) {
     const isDisabled = disabled || loading
 
-    const base = "group rounded-xl p-4 text-sm font-bold transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+    const base = "group rounded-xl p-4 text-sm font-bold cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 
     const variants = {
         primary: "bg-primary text-bg-input hover:bg-teal-700",
@@ -22,10 +23,13 @@ export default function Button({
     }
 
     return (
-        <button
+        <motion.button
             type={type}
             onClick={onClick}
             disabled={isDisabled}
+            whileHover={!isDisabled ? { scale: 1.018 } : {}}
+            whileTap={!isDisabled ? { scale: 0.97 } : {}}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
             className={`${base} ${variants[variant]} ${fullWidth ? "w-full" : ""} ${className}`}
         >
             {loading && (
@@ -46,6 +50,6 @@ export default function Button({
                     <ArrowIcon className="transition-transform duration-200 group-hover:translate-x-1" />
                 </span>
             )}
-        </button>
+        </motion.button>
     )
 }

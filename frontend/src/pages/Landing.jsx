@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import Hero from "../components/landing/Hero";
 import ProductImg from "../components/landing/ProductImg";
 import FeatureCard from "../components/landing/FeatureCard";
@@ -9,6 +10,7 @@ import StarIcon from '../assets/icons/star.svg?react'
 import Button from "../components/ui/Button";
 import Footer from "../components/layout/Footer";
 import { useNavigate } from "react-router-dom";
+import { EASE } from '../utils/motion';
 
 export default function Landing() {
     const navigate = useNavigate()
@@ -24,12 +26,24 @@ export default function Landing() {
 
                 {/* Features section */}
                 <div className="mb-4 lg:mb-24">
-                    <h2 className="text-[32px] font-bold text-text-title text-center mb-2 lg:text-[40px]">
+                    <motion.h2
+                        initial={{ opacity: 0, y: 24 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.4 }}
+                        transition={{ duration: 0.6, ease: EASE }}
+                        className="text-[32px] font-bold text-text-title text-center mb-2 lg:text-[40px]"
+                    >
                         Everything you need for safe shopping.
-                    </h2>
-                    <p className="text-base text-text-body text-center mb-8 lg:text-lg lg:mb-14">
+                    </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.4 }}
+                        transition={{ duration: 0.6, ease: EASE, delay: 0.1 }}
+                        className="text-base text-text-body text-center mb-8 lg:text-lg lg:mb-14"
+                    >
                         SafeScan combines AI label recognition with the world's largest clinical database.
-                    </p>
+                    </motion.p>
                     <div className="lg:grid lg:grid-cols-3 lg:gap-6">
                         <FeatureCard
                             title="Live Label Scanning"
@@ -71,22 +85,46 @@ export default function Landing() {
                 </div>
 
                 {/* CTA banner */}
-                <div className="bg-[#052A27] rounded-3xl px-6 py-8 flex flex-col justify-center items-center text-center mb-6 h-[450px] lg:h-auto lg:px-16 lg:py-25 lg:mb-0 lg:gap-5">
-                    <h2 className="text-[32px] font-bold text-white mb-4 leading-tight lg:text-5xl lg:max-w-xl">
+                <motion.div
+                    initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.7, ease: EASE }}
+                    className="bg-[#052A27] rounded-3xl px-6 py-8 flex flex-col justify-center items-center text-center mb-6 h-[450px] lg:h-auto lg:px-16 lg:py-25 lg:mb-0 lg:gap-5"
+                >
+                    <motion.h2
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, ease: EASE, delay: 0.15 }}
+                        className="text-[32px] font-bold text-white mb-4 leading-tight lg:text-5xl lg:max-w-xl"
+                    >
                         Ready to scan your first product?
-                    </h2>
-                    <p className="text-lg text-white/60 leading-relaxed mb-8 lg:max-w-lg">
+                    </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0, y: 12 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, ease: EASE, delay: 0.25 }}
+                        className="text-lg text-white/60 leading-relaxed mb-8 lg:max-w-lg"
+                    >
                         Join 1 million users who trust SafeScan for their daily beauty
                         and health choices. It's free, fast, and science-backed.
-                    </p>
-                    <div className="w-full lg:w-[330px]">
+                    </motion.p>
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, ease: EASE, delay: 0.35 }}
+                        className="w-full lg:w-[330px]"
+                    >
                         <Button
                             text="Get Started for Free"
                             variant="primary"
                             onClick={() => navigate('/register')}
                         />
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             </main>
 
             <div>
