@@ -22,6 +22,7 @@ export default function ScanLanding() {
   const fileInputRef = useRef(null)
   const [showCamera, setShowCamera] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState(null)
   const navigate = useNavigate()
 
   const handleImageReady = async (imageData) => {
@@ -31,6 +32,7 @@ export default function ScanLanding() {
       return
     }
 
+    setScanError(null)
     setScanning(true)
     try {
       const fetchRes = await fetch(imageData)
@@ -52,13 +54,13 @@ export default function ScanLanding() {
       }
 
       if (!res.ok) {
-        alert(data.error || 'Failed to scan image. Please try again.')
+        setScanError(data.error || 'Failed to scan image. Please try again.')
         return
       }
 
       navigate('/confirm', { state: { imageData, extractedText: data.extractedText } })
-    } catch (err) {
-      alert('Failed to scan image. Please try again.')
+    } catch {
+      setScanError('Failed to scan image. Please try again.')
     } finally {
       setScanning(false)
     }
@@ -76,6 +78,23 @@ export default function ScanLanding() {
   const handleCameraCapture = (imageData) => {
     setShowCamera(false)
     handleImageReady(imageData)
+  }
+
+  if (scanError) {
+    return (
+      <div className="min-h-[calc(100vh-72px)] flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-border shadow-sm flex flex-col items-center justify-center px-8 py-16 text-center">
+          <p className="text-sm text-danger font-medium mb-4">{scanError}</p>
+          <button
+            type="button"
+            onClick={() => setScanError(null)}
+            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-teal-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (scanning) {

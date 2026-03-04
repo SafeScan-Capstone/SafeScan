@@ -12,7 +12,13 @@ const db = require('../db');
  * Returns extractedText + analysis.
  */
 exports.scanImage = async (req, res) => {
-  const client = await db.pool.connect();
+  let client;
+  try {
+    client = await db.pool.connect();
+  } catch (connectError) {
+    console.error('DB connect error:', connectError.message);
+    return res.status(503).json({ error: 'Database unavailable', requestId: req.id });
+  }
   
   try {
     // Check if image file is present
@@ -168,7 +174,7 @@ exports.scanImage = async (req, res) => {
       requestId: req.id,
     });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 
@@ -180,7 +186,13 @@ exports.scanImage = async (req, res) => {
  * Returns matched_ingredients, risk_level, explanations, source, and summary counts.
  */
 exports.analyzeText = async (req, res, next) => {
-  const client = await db.pool.connect();
+  let client;
+  try {
+    client = await db.pool.connect();
+  } catch (connectError) {
+    console.error('DB connect error:', connectError.message);
+    return res.status(503).json({ error: 'Database unavailable' });
+  }
   try {
     const { text, productCategory } = req.body || {};
     
@@ -358,7 +370,7 @@ exports.analyzeText = async (req, res, next) => {
       error: 'An error occurred while analyzing the text. Please try again.',
     });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 

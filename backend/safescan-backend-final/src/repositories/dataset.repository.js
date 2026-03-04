@@ -1,5 +1,11 @@
 const db = require('../db');
 
+// Whitelist of allowed sort fields to prevent SQL injection
+const ALLOWED_SORT_FIELDS = ['created_at', 'updated_at', 'name', 'risk_level'];
+
+// Whitelist of allowed filter keys (JSON data fields)
+const ALLOWED_FILTER_KEYS = ['name', 'risk_level', 'category', 'status', 'source'];
+
 class DatasetRepository {
   async upsertMany(rows) {
     if (!rows.length) return { inserted: 0, updated: 0, skipped: 0 };
@@ -36,6 +42,8 @@ class DatasetRepository {
     }
 
     Object.keys(filters).forEach(key => {
+      // Only allow whitelisted filter keys
+      if (!ALLOWED_FILTER_KEYS.includes(key)) return;
       if (filters[key]) {
         whereClauses.push(`(data->>'${key}') ILIKE $${paramIndex++}`);
         params.push(`%${filters[key]}%`);
@@ -44,11 +52,15 @@ class DatasetRepository {
 
     const whereClause = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+    // Whitelist sortBy to prevent SQL injection
+    const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : 'created_at';
+    const safeOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     let orderBy;
-    if (['created_at', 'updated_at'].includes(sortBy)) {
-      orderBy = `${sortBy} ${order.toUpperCase()}`;
+    if (['created_at', 'updated_at'].includes(safeSortBy)) {
+      orderBy = `${safeSortBy} ${safeOrder}`;
     } else {
-      orderBy = `(data->>'${sortBy}') ${order.toUpperCase()} NULLS LAST`;
+      orderBy = `(data->>'${safeSortBy}') ${safeOrder} NULLS LAST`;
     }
 
     const query = `
@@ -76,6 +88,8 @@ class DatasetRepository {
     }
 
     Object.keys(filters).forEach(key => {
+      // Only allow whitelisted filter keys
+      if (!ALLOWED_FILTER_KEYS.includes(key)) return;
       if (filters[key]) {
         whereClauses.push(`(data->>'${key}') ILIKE $${paramIndex++}`);
         params.push(`%${filters[key]}%`);
@@ -86,7 +100,7 @@ class DatasetRepository {
 
     const query = `SELECT COUNT(*) as total FROM dataset_rows ${whereClause}`;
     const result = await db.query(query, params);
-    return parseInt(result.rows[0].total);
+    return result.rows[0] ? parseInt(result.rows[0].total) : 0;
   }
 }
 

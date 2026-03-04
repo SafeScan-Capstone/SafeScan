@@ -29,7 +29,7 @@ export default function CameraScanner({ onClose, productCategory }) {
                     setCameraActive(true)
                 }
             })
-            .catch(() => alert('Camera access denied. Please use the Upload option instead.'))
+            .catch(() => setError('Camera access denied. Please use the Upload option instead.'))
     }
 
     const sendToBackend = async (file) => {
@@ -61,7 +61,7 @@ export default function CameraScanner({ onClose, productCategory }) {
             const data = text ? JSON.parse(text) : {}
             if (!res.ok) throw new Error(data.error ?? `Server error (${res.status})`)
 
-            localStorage.setItem('guestScanCount', '1')
+            localStorage.setItem('guestScanCount', String(parseInt(localStorage.getItem('guestScanCount') ?? '0') + 1))
             navigate('/confirm', {
                 state: {
                     extractedText: data.extractedText ?? '',

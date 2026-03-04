@@ -43,7 +43,8 @@ export default function SubscriptionModal({ onClose }) {
                     <Button
                         text="Manage Billing"
                         variant="primary"
-                        className="mb-3" />
+                        className="mb-3"
+                        onClick={() => window.open('mailto:support@safescan.app?subject=Billing+Enquiry', '_blank')} />
 
                     <Button
                         text="Close"

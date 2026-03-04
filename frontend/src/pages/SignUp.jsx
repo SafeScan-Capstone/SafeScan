@@ -49,8 +49,8 @@ export default function SignUp() {
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
 
-                localStorage.setItem('userName', values.fullName)
-                localStorage.setItem('userCreatedAt', data.user?.createdAt ?? new Date().toISOString())
+                localStorage.setItem(`userName_${values.email}`, values.fullName)
+                localStorage.setItem(`userCreatedAt_${values.email}`, data.user?.createdAt ?? new Date().toISOString())
 
                 const loginRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
                     method: 'POST',

@@ -15,10 +15,13 @@ import Settings from './pages/Settings'
 import ScanLanding from './pages/ScanLanding'
 import Landing from './pages/Landing'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 import About from './pages/About'
 import OCRReview from './pages/OCRReview'
 import ConfirmIngredients from './components/camera/ConfirmIngredients'
 import Analyzing from './components/camera/Analyzing'
+import NotFound from './pages/NotFound'
+import ForgotPassword from './pages/ForgotPassword'
 
 const AUTH_PAGES = ['/register', '/login', '/scan-result']
 
@@ -35,6 +38,7 @@ function AppLayout() {
           <Route path="/" element={<Landing />} />
           <Route path="/register" element={<SignUp />} />
           <Route path="/login" element={<SignIn />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/scan-home" element={<ScanLanding />} />
           <Route path="/lookup" element={<Lookup />} />
           <Route path="/ocr-review" element={<OCRReview />} />
@@ -43,16 +47,30 @@ function AppLayout() {
               <History />
             </PrivateRoute>
           } />
-          <Route path="/scan-result/:id" element={<Results />} />
+          <Route path="/scan-result/:id" element={
+            <PrivateRoute>
+              <Results />
+            </PrivateRoute>
+          } />
           <Route path="/settings" element={
             <PrivateRoute>
               <Settings />
             </PrivateRoute>
           } />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/about" element={<About />} />
-          <Route path="/confirm" element={<ConfirmIngredients />} />
-          <Route path="/analyzing" element={<Analyzing />} />
+          <Route path="/confirm" element={
+            <PrivateRoute>
+              <ConfirmIngredients />
+            </PrivateRoute>
+          } />
+          <Route path="/analyzing" element={
+            <PrivateRoute>
+              <Analyzing />
+            </PrivateRoute>
+          } />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>

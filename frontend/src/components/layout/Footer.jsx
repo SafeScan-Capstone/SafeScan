@@ -3,7 +3,7 @@ import SafeScanLogo from '../../assets/logo/safescan-logo.png'
 export default function Footer() {
     const links = {
         Privacy: { href: '/privacy', external: false },
-        Terms: { href: '/privacy', external: false },
+        Terms: { href: '/terms', external: false },
         Twitter: { href: 'https://twitter.com', external: true },
         Instagram: { href: 'https://instagram.com', external: true },
     }

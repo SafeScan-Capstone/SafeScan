@@ -3,51 +3,7 @@ import ScanImg from '../assets/images/scanImg.svg';
 import SummaryBadge from "../components/ingredients/SummaryBadge";
 import IngredientResultCard from "../components/ingredients/IngredientResultCard";
 import Button from "../components/ui/Button";
-
-const RISK_CONFIG = {
-    HIGH: {
-        label: 'High Risk Detected',
-        description: 'Contains ingredients that are restricted or of concern.',
-        badge: 'Restricted',
-        bannerClass: 'bg-[#FDECEC] border border-[#F5C2C2]',
-        labelClass: 'text-danger',
-        iconClass: 'text-danger',
-        badgeClass: 'bg-[#FDECEC] text-danger border border-danger',
-        icon: (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        ),
-    },
-    MEDIUM: {
-        label: 'Caution Advised',
-        description: 'Some ingredients may cause sensitivity or irritation for certain skin types.',
-        badge: 'Risky',
-        bannerClass: 'bg-[#FFF7E6] border border-[#FDDFA0]',
-        labelClass: 'text-risky',
-        iconClass: 'text-risky',
-        badgeClass: 'bg-[#FFF7E6] text-risky border border-risky',
-        icon: (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        ),
-    },
-    LOW: {
-        label: 'All Clear',
-        description: 'No harmful or restricted ingredients detected in this product.',
-        badge: 'Safe',
-        bannerClass: 'bg-[#ECF8EF] border border-[#A3D9B1]',
-        labelClass: 'text-[#43B75D]',
-        iconClass: 'text-[#43B75D]',
-        badgeClass: 'bg-[#ECF8EF] text-[#43B75D] border border-[#43B75D]',
-        icon: (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-        ),
-    },
-}
+import { RISK_CONFIG } from "../constants/riskConfig";
 
 function transformResults(data) {
     const seen = new Set()
@@ -70,52 +26,6 @@ function transformResults(data) {
 
 }
 
-// function transformResults(data) {
-//     const seen = new Set()
-//     const matched = (data.results ?? data.matched_ingredients ?? [])
-//         .filter((item) => {
-//             const name = (item.ingredient ?? item.name ?? '').toLowerCase()
-//             if (seen.has(name)) return false
-//             seen.add(name)
-//             return true
-//         })
-//         .map((item, index) => ({
-//             id: index + 1,
-//             name: item.ingredient ?? item.name,
-//             safety: item.risk_level === 'HIGH' ? 'restricted'
-//                 : item.risk_level === 'MEDIUM' ? 'risky'
-//                 : item.risk_level === 'LOW' ? 'safe'
-//                 : item.status === 'Restricted' ? 'restricted'
-//                 : item.status === 'Risky' ? 'risky'
-//                 : item.status === 'Unknown' || item.status === 'unknown' ? 'unknown'
-//                 : 'safe',
-//             description: item.explanation ?? item.reason ?? data.explanations?.[index] ?? '',
-//         }))
-
-//     // Add unmatched ingredients as unknown
-//     const matchedNames = new Set(matched.map(i => i.name.toLowerCase()))
-//     const extractedText = data.extractedText ?? ''
-//     const ingredientsSection = extractedText.match(/ingredients[:\s]*/i)
-//         ? extractedText.slice(extractedText.search(/ingredients[:\s]*/i)).split(/directions:|warnings?:|precautions:|how to use:|caution:|store/i)[0]
-//         : extractedText
-
-//     const allIngredients = ingredientsSection
-//         .replace(/ingredients[:\s]*/i, '')
-//         .split(/,|\n/)
-//         .map(s => s.trim())
-//         .filter(s => s.length > 2 && s.length < 60 && !/\d{4}/.test(s))
-
-//     const unknown = allIngredients
-//         .filter(name => !matchedNames.has(name.toLowerCase()))
-//         .map((name, i) => ({
-//             id: matched.length + i + 1,
-//             name,
-//             safety: 'unknown',
-//             description: '',
-//         }))
-
-//     return [...matched, ...unknown]
-// }
 
 export default function Results() {
     const { id } = useParams()
@@ -204,12 +114,6 @@ export default function Results() {
                                 <SummaryBadge count={restrictedCount} label="Restricted" dotClass="bg-danger" badgeClass="bg-[#FDECEC] text-danger border-danger" />
                                 <SummaryBadge count={summary.unknown ?? ingredients.filter(i => i.safety === 'unknown').length} label="Unknown" dotClass="bg-gray-400" badgeClass="bg-gray-100 text-gray-500 border-gray-300"
                                 />
-                                {/* <SummaryBadge
-                                    count={ingredients.filter(i => i.safety === 'unknown').length}
-                                    label="Unknown"
-                                    dotClass="bg-gray-400"
-                                    badgeClass="bg-gray-100 text-gray-500 border-gray-300"
-                                /> */}
                             </div>
                         </div>
 

@@ -3,7 +3,7 @@ const Joi = require('joi');
 const schemas = {
   register: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().min(6).required(),
+    password: Joi.string().min(8).required(),
     consent_given: Joi.boolean().valid(true).required()
       .messages({
         'any.only': 'You must agree to the SafeScan Privacy Policy and Disclaimer.',
@@ -14,6 +14,7 @@ const schemas = {
 
   login: Joi.object({
     email: Joi.string().email().required(),
+    password: Joi.string().required(),
   }).unknown(false),
 
   verify: Joi.object({

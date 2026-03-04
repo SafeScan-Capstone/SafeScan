@@ -10,10 +10,13 @@ const SAFETY_ICONS = {
     restricted: <DangerIcon />
 }
 
-export default function HistoryCard({ id, productName, time, ingredientCount, safety }) {
+export default function HistoryCard({ id, productName, scannedAt, time, ingredientCount, safety }) {
     const navigate = useNavigate()
     const config = SAFETY_CONFIG[safety]
     const icon = SAFETY_ICONS[safety]
+    const displayTime = scannedAt
+        ? new Date(scannedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : (time ?? '')
 
     return (
         <div className="bg-white rounded-2xl px-4 py-3.5 border border-gray-100 shadow-sm flex items-center gap-3">
@@ -28,7 +31,7 @@ export default function HistoryCard({ id, productName, time, ingredientCount, sa
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-text-title truncate">{productName}</p>
                 <p className="text-xs text-text-secondary mt-0.5">
-                    {time} • {ingredientCount} ingredients
+                    {displayTime} • {ingredientCount} ingredients
                 </p>
             </div>
 

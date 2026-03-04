@@ -89,8 +89,9 @@ export default function Settings() {
 
                         <button
                             type="button"
-                            onClick={() => navigate('/edit-profile')}
-                            className="w-full md:w-auto rounded-xl border border-primary px-5 py-2 text-sm font-semibold text-primary hover:bg-white/60 transition-colors shrink-0"
+                            disabled
+                            title="Coming soon"
+                            className="w-full md:w-auto rounded-xl border border-primary px-5 py-2 text-sm font-semibold text-primary opacity-50 cursor-not-allowed shrink-0"
                         >
                             Edit Profile
                         </button>

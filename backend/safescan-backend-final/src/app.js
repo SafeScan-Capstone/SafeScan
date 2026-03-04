@@ -19,7 +19,7 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   'http://localhost:5173',
   'https://safescan-backend-1.onrender.com',
-  'https://my-production-frontend.com',
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
 
 /**
@@ -63,10 +63,13 @@ app.get('/', (req, res) => {
 const isProduction = process.env.NODE_ENV === 'production';
 
 if (!process.env.JWT_SECRET) {
+  if (isProduction) {
+    console.error('FATAL: JWT_SECRET is not set. Refusing to start in production.');
+    process.exit(1);
+  }
   console.warn(
-    '⚠️ JWT_SECRET is not set. Using a development fallback. Set JWT_SECRET in Render for production!'
+    '⚠️ JWT_SECRET is not set. Using a development fallback. Set JWT_SECRET in production!'
   );
-  // Set a fallback so any code that reads process.env.JWT_SECRET will still work.
   process.env.JWT_SECRET = 'dev-jwt-secret-change-me';
 }
 

@@ -11,7 +11,7 @@ exports.health = async (req, res) => {
     res.json(healthStatus);
   } catch (error) {
     console.error('AI health check error:', error.message);
-    res.status(503).json({ status: 'error', message: error.message });
+    res.status(503).json({ status: 'error', message: 'Service unavailable' });
   }
 };
 
