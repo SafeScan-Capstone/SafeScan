@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import AskAIButton from "./AskAIButton"
 
 const INGREDIENT_DOT = {
@@ -46,7 +47,11 @@ export default function IngredientResultCard({ name, safety = 'safe', descriptio
     const isUnknown = safety === 'unknown'
 
     return (
-        <div className={`relative rounded-2xl px-4 py-3.5 border ${border} shadow-sm`}>
+        <motion.div
+            whileHover={{ y: -2, boxShadow: '0 8px 24px -4px rgba(0,0,0,0.07)' }}
+            transition={{ duration: 0.2 }}
+            className={`relative rounded-2xl px-4 py-3.5 border ${border} shadow-sm`}
+        >
             {cornerIcon}
             <div className="flex items-center gap-2 mb-1">
                 <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dot}`} />
@@ -56,6 +61,6 @@ export default function IngredientResultCard({ name, safety = 'safe', descriptio
                 {description || 'Not found in our ingredient database.'}
             </p>
             {isUnknown && <AskAIButton name={name} />}
-        </div>
+        </motion.div>
     )
 }

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { SAFETY_CONFIG } from "../../constants/ingredients"
 import SafeIcon from '../../assets/icons/safe.svg?react'
 import RiskyIcon from '../../assets/icons/risky.svg?react'
@@ -19,7 +20,11 @@ export default function HistoryCard({ id, productName, scannedAt, time, ingredie
         : (time ?? '')
 
     return (
-        <div className="bg-white rounded-2xl px-4 py-3.5 border border-gray-100 shadow-sm flex items-center gap-3">
+        <motion.div
+            whileHover={{ y: -2, boxShadow: '0 8px 24px -4px rgba(0,0,0,0.08)' }}
+            transition={{ duration: 0.2 }}
+            className="bg-white rounded-2xl px-4 py-3.5 border border-gray-100 shadow-sm flex items-center gap-3"
+        >
             {/* Clock icon */}
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-bg-secondary">
                 <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,6 +57,6 @@ export default function HistoryCard({ id, productName, scannedAt, time, ingredie
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
             </button>
-        </div>
+        </motion.div>
     )
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import EmptyHistory from '../components/history/EmptyHistory'
 import HistoryCard from '../components/history/HistoryCard'
+import { EASE } from '../utils/motion'
 
 export default function History() {
     const [history, setHistory] = useState([])
@@ -65,11 +67,27 @@ export default function History() {
                             </svg>
                             Recently Scanned
                         </div>
-                        <div className="flex flex-col gap-3 md:gap-4">
+                        <motion.div
+                            className="flex flex-col gap-3 md:gap-4"
+                            initial="hidden"
+                            animate="visible"
+                            variants={{
+                                hidden: {},
+                                visible: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } }
+                            }}
+                        >
                             {history.map((item) => (
-                                <HistoryCard key={item.id} {...item} />
+                                <motion.div
+                                    key={item.id}
+                                    variants={{
+                                        hidden: { opacity: 0, y: 16 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } }
+                                    }}
+                                >
+                                    <HistoryCard {...item} />
+                                </motion.div>
                             ))}
-                        </div>
+                        </motion.div>
                     </>
                 )}
             </div>

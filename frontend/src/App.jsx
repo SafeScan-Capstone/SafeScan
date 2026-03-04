@@ -1,4 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { EASE } from './utils/motion'
 import './themes/variables.css'
 import './styles/global.css'
 import './index.css'
@@ -33,46 +35,54 @@ function AppLayout() {
     <div className="min-h-screen bg-bg-primary">
       <ScrollToTop />
       {!hideNavbar && <Navbar />}
-      <main>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<SignUp />} />
-          <Route path="/login" element={<SignIn />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/scan-home" element={<ScanLanding />} />
-          <Route path="/lookup" element={<Lookup />} />
-          <Route path="/ocr-review" element={<OCRReview />} />
-          <Route path="/history" element={
-            <PrivateRoute>
-              <History />
-            </PrivateRoute>
-          } />
-          <Route path="/scan-result/:id" element={
-            <PrivateRoute>
-              <Results />
-            </PrivateRoute>
-          } />
-          <Route path="/settings" element={
-            <PrivateRoute>
-              <Settings />
-            </PrivateRoute>
-          } />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/confirm" element={
-            <PrivateRoute>
-              <ConfirmIngredients />
-            </PrivateRoute>
-          } />
-          <Route path="/analyzing" element={
-            <PrivateRoute>
-              <Analyzing />
-            </PrivateRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.main
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: EASE }}
+        >
+          <Routes location={{ pathname }} key={pathname}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/register" element={<SignUp />} />
+            <Route path="/login" element={<SignIn />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/scan-home" element={<ScanLanding />} />
+            <Route path="/lookup" element={<Lookup />} />
+            <Route path="/ocr-review" element={<OCRReview />} />
+            <Route path="/history" element={
+              <PrivateRoute>
+                <History />
+              </PrivateRoute>
+            } />
+            <Route path="/scan-result/:id" element={
+              <PrivateRoute>
+                <Results />
+              </PrivateRoute>
+            } />
+            <Route path="/settings" element={
+              <PrivateRoute>
+                <Settings />
+              </PrivateRoute>
+            } />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/confirm" element={
+              <PrivateRoute>
+                <ConfirmIngredients />
+              </PrivateRoute>
+            } />
+            <Route path="/analyzing" element={
+              <PrivateRoute>
+                <Analyzing />
+              </PrivateRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </motion.main>
+      </AnimatePresence>
     </div>
   )
 }
