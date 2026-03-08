@@ -1,10 +1,8 @@
-import AskAIButton from "./AskAIButton"
-
 const INGREDIENT_DOT = {
     restricted: 'bg-danger',
     risky: 'bg-risky',
     safe: 'bg-[#43B75D]',
-    unknown: 'bg-gray-400',
+    unknown: 'bg-gray-300',
 }
 
 const INGREDIENT_BORDER = {
@@ -30,32 +28,34 @@ const INGREDIENT_CORNER_ICON = {
         </span>
     ),
     safe: null,
-    unknown: (
-        <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-white">
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </span>
-    ),
+    unknown: null,
 }
 
-export default function IngredientResultCard({ name, safety = 'safe', description }) {
-    const dot = INGREDIENT_DOT[safety] ?? INGREDIENT_DOT.unknown
-    const cornerIcon = INGREDIENT_CORNER_ICON[safety] ?? INGREDIENT_CORNER_ICON.unknown
-    const border = INGREDIENT_BORDER[safety] ?? INGREDIENT_BORDER.unknown
-    const isUnknown = safety === 'unknown'
+const FALLBACK_DESCRIPTION = {
+    safe: 'A recognized ingredient considered safe for typical cosmetic use.',
+    risky: 'This ingredient may cause sensitivity or irritation in some individuals.',
+    restricted: 'This ingredient is restricted or banned in some regions due to safety concerns.',
+    unknown: 'We could not verify this ingredient. If you have concerns, consult a dermatologist.',
+}
+
+export default function IngredientResultCard({ name, safety = 'unknown', description }) {
+    const resolvedSafety = ['safe', 'risky', 'restricted', 'unknown'].includes(safety) ? safety : 'unknown'
+
+    const dot = INGREDIENT_DOT[resolvedSafety]
+    const cornerIcon = INGREDIENT_CORNER_ICON[resolvedSafety] ?? null
+    const border = INGREDIENT_BORDER[resolvedSafety]
+    const displayDescription = description || FALLBACK_DESCRIPTION[resolvedSafety]
 
     return (
         <div className={`relative rounded-2xl px-4 py-3.5 border ${border} shadow-sm`}>
             {cornerIcon}
             <div className="flex items-center gap-2 mb-1">
                 <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dot}`} />
-                <p className="text-sm font-bold text-text-title">{name}</p>
+                <p className="text-sm font-bold text-text-title pr-8">{name}</p>
             </div>
             <p className="text-xs text-text-body leading-relaxed pl-4">
-                {description || 'Not found in our ingredient database.'}
+                {displayDescription}
             </p>
-            {isUnknown && <AskAIButton name={name} />}
         </div>
     )
 }

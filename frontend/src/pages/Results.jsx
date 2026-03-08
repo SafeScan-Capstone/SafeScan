@@ -1,8 +1,37 @@
+import { useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import ScanImg from '../assets/images/scanImg.svg';
 import SummaryBadge from "../components/ingredients/SummaryBadge";
 import IngredientResultCard from "../components/ingredients/IngredientResultCard";
 import Button from "../components/ui/Button";
+import bottle1 from '../assets/images/bottle1.jpeg'
+import bottle2 from '../assets/images/bottle2.jpeg'
+import bottle3 from '../assets/images/bottle3.jpeg'
+import bottle4 from '../assets/images/bottle4.jpeg'
+import bottle5 from '../assets/images/bottle5.jpeg'
+import bottle6 from '../assets/images/bottle6.jpeg'
+import bottle7 from '../assets/images/bottle7.jpeg'
+import bottle8 from '../assets/images/bottle8.jpeg'
+import bottle9 from '../assets/images/bottle9.jpeg'
+import bottle10 from '../assets/images/bottle10.jpeg'
+
+const BOTTLE_IMAGES = [
+    bottle1, bottle2, bottle3, bottle4, bottle5,
+    bottle6, bottle7, bottle8, bottle9, bottle10,
+]
+
+// Pick a different bottle each session (changes on new tab/scan, not mid-session)
+function getSessionBottle() {
+    const key = 'safescan_bottle_index'
+    let idx = sessionStorage.getItem(key)
+    if (idx === null) {
+        // Rotate based on day so it genuinely changes over time
+        idx = Math.floor(Date.now() / (1000 * 60 * 60 * 6)) % BOTTLE_IMAGES.length
+        sessionStorage.setItem(key, idx)
+    }
+    return BOTTLE_IMAGES[Number(idx)]
+}
+
+// ---------------------------------------------------------------------------
 
 const RISK_CONFIG = {
     HIGH: {
@@ -49,73 +78,37 @@ const RISK_CONFIG = {
     },
 }
 
+function mapSafety(item) {
+    const s = item.status ?? ''
+    const r = item.risk_level ?? ''
+    if (s === 'Restricted' || r === 'HIGH') return 'restricted'
+    if (s === 'Risky' || r === 'MEDIUM') return 'risky'
+    if (s === 'Safe' || r === 'LOW') return 'safe'
+    // Dataset items with no status passed a safety check — safe
+    if (!item.fromAI && !item.fromGemini) return 'safe'
+    // Gemini/AI items with no clear status — genuinely unknown, show honestly
+    return 'unknown'
+}
+
 function transformResults(data) {
     const seen = new Set()
     return (data.results ?? data.matched_ingredients ?? [])
         .filter((item) => {
             const name = (item.ingredient ?? item.name ?? '').toLowerCase()
-            if (seen.has(name)) return false
+            if (!name || seen.has(name)) return false
             seen.add(name)
             return true
         })
+        .filter(item => (item.status ?? 'Unknown') !== 'Unknown')
         .map((item, index) => ({
             id: index + 1,
             name: item.ingredient ?? item.name,
-            safety: item.status === 'Restricted' || item.risk_level === 'HIGH' ? 'restricted'
-                : item.status === 'Risky' || item.risk_level === 'MEDIUM' ? 'risky'
-                    : item.status === 'Unknown' || item.status === 'unknown' ? 'unknown'
-                        : 'safe',
+            safety: mapSafety(item),
             description: item.explanation ?? item.reason ?? '',
+            fromAI: item.fromAI ?? false,
+            fromGemini: item.fromGemini ?? false,
         }))
-
 }
-
-// function transformResults(data) {
-//     const seen = new Set()
-//     const matched = (data.results ?? data.matched_ingredients ?? [])
-//         .filter((item) => {
-//             const name = (item.ingredient ?? item.name ?? '').toLowerCase()
-//             if (seen.has(name)) return false
-//             seen.add(name)
-//             return true
-//         })
-//         .map((item, index) => ({
-//             id: index + 1,
-//             name: item.ingredient ?? item.name,
-//             safety: item.risk_level === 'HIGH' ? 'restricted'
-//                 : item.risk_level === 'MEDIUM' ? 'risky'
-//                 : item.risk_level === 'LOW' ? 'safe'
-//                 : item.status === 'Restricted' ? 'restricted'
-//                 : item.status === 'Risky' ? 'risky'
-//                 : item.status === 'Unknown' || item.status === 'unknown' ? 'unknown'
-//                 : 'safe',
-//             description: item.explanation ?? item.reason ?? data.explanations?.[index] ?? '',
-//         }))
-
-//     // Add unmatched ingredients as unknown
-//     const matchedNames = new Set(matched.map(i => i.name.toLowerCase()))
-//     const extractedText = data.extractedText ?? ''
-//     const ingredientsSection = extractedText.match(/ingredients[:\s]*/i)
-//         ? extractedText.slice(extractedText.search(/ingredients[:\s]*/i)).split(/directions:|warnings?:|precautions:|how to use:|caution:|store/i)[0]
-//         : extractedText
-
-//     const allIngredients = ingredientsSection
-//         .replace(/ingredients[:\s]*/i, '')
-//         .split(/,|\n/)
-//         .map(s => s.trim())
-//         .filter(s => s.length > 2 && s.length < 60 && !/\d{4}/.test(s))
-
-//     const unknown = allIngredients
-//         .filter(name => !matchedNames.has(name.toLowerCase()))
-//         .map((name, i) => ({
-//             id: matched.length + i + 1,
-//             name,
-//             safety: 'unknown',
-//             description: '',
-//         }))
-
-//     return [...matched, ...unknown]
-// }
 
 export default function Results() {
     const { id } = useParams()
@@ -123,22 +116,40 @@ export default function Results() {
     const location = useLocation()
     const data = location.state?.result
 
+    // Pick bottle once per session
+    const bottleImage = useMemo(() => getSessionBottle(), [])
+
     if (!data) {
         navigate('/scan-home', { replace: true })
         return null
     }
 
     const riskLevel = data.risk_level ?? 'LOW'
-    const risk = RISK_CONFIG[riskLevel] ?? RISK_CONFIG.LOW
     const ingredients = transformResults(data)
-    const summary = data.summary ?? {}
+    const safeCount = ingredients.filter(i => i.safety === 'safe').length
+    const riskyCount = ingredients.filter(i => i.safety === 'risky').length
+    const restrictedCount = ingredients.filter(i => i.safety === 'restricted').length
+    const unknownCount = ingredients.filter(i => i.safety === 'unknown').length
 
-    const safeCount = summary.safe ?? ingredients.filter(i => i.safety === 'safe').length
-    const riskyCount = summary.risky ?? ingredients.filter(i => i.safety === 'risky').length
-    const restrictedCount = summary.restricted ?? ingredients.filter(i => i.safety === 'restricted').length
+    // Build context-aware banner based on actual counts
+    const baseRisk = RISK_CONFIG[riskLevel] ?? RISK_CONFIG.LOW
+    const total = ingredients.length
+    const risk = {
+        ...baseRisk,
+        description: riskLevel === 'HIGH'
+            ? restrictedCount === 1 && safeCount > 5
+                ? `Contains 1 restricted ingredient out of ${total} total. The majority (${safeCount}) are safe — use with caution if you have sensitivities.`
+                : `Contains ${restrictedCount} restricted ingredient${restrictedCount > 1 ? 's' : ''} that ${restrictedCount > 1 ? 'are' : 'is'} banned or of concern in some regions.`
+            : riskLevel === 'MEDIUM'
+                ? `${riskyCount} ingredient${riskyCount > 1 ? 's' : ''} may cause sensitivity or irritation for certain skin types.`
+                : baseRisk.description,
+    }
 
-    const SAFETY_ORDER = { restricted: 0, risky: 1, safe: 2 }
+    const SAFETY_ORDER = { restricted: 0, risky: 1, safe: 2, unknown: 3 }
     const sortedIngredients = [...ingredients].sort((a, b) => SAFETY_ORDER[a.safety] - SAFETY_ORDER[b.safety])
+
+    const totalIngredients = ingredients.length
+    const aiAnalyzedCount = ingredients.filter(i => i.fromAI || i.fromGemini).length
 
     return (
         <div className="mx-auto max-w-md md:max-w-[1440px] px-4 py-6 md:px-10 md:py-8">
@@ -157,22 +168,38 @@ export default function Results() {
             <div className="md:flex md:justify-center">
                 <div className="flex flex-col md:flex-row md:gap-16 md:items-start">
 
+                    {/* Left column — rotating bottle image */}
                     <div className="md:w-[380px] md:shrink-0 md:flex md:flex-col">
-                        <div className="relative rounded-2xl overflow-hidden h-[400px] md:flex-1 mb-4">
-                            <img src={ScanImg} alt="Product" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        <div className="relative rounded-2xl overflow-hidden h-[400px] md:flex-1 mb-4 bg-[#F2FAF9]">
+                            <img
+                                src={bottleImage}
+                                alt="Scanned product"
+                                className="w-full h-full object-contain p-6"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                            {/* Ingredient count badge bottom-left */}
                             <div className="absolute bottom-0 left-0 right-0 p-4">
-                                <p className="text-xs font-semibold text-white/70 uppercase tracking-wider mb-1">
-                                    {data.productCategory ?? 'Product'}
+                                <p className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-1">
+                                    Ingredients scanned
                                 </p>
-                                <h2 className="text-xl font-bold text-white leading-tight">Scan Result</h2>
+                                <p className="text-2xl font-bold text-white leading-tight">
+                                    {totalIngredients}
+                                    <span className="text-sm font-normal text-white/70 ml-2">ingredients found</span>
+                                </p>
+                                {aiAnalyzedCount > 0 && (
+                                    <p className="text-xs text-white/60 mt-0.5">
+                                        {aiAnalyzedCount} analyzed by AI
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <Button text="Scan Another" variant="primary" onClick={() => navigate('/scan-home')} />
                     </div>
 
+                    {/* Right column — results */}
                     <div className="flex-1 mt-5 md:max-w-[520px] md:mt-0">
 
+                        {/* Risk banner — NO product name or category */}
                         <div className={`rounded-2xl p-4 mb-5 ${risk.bannerClass}`}>
                             <div className={`flex items-center gap-2 mb-2 ${risk.iconClass}`}>
                                 {risk.icon}
@@ -182,37 +209,25 @@ export default function Results() {
                             {data.disclaimer && (
                                 <p className="text-xs text-text-secondary italic mb-3">{data.disclaimer}</p>
                             )}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                    </svg>
-                                    Category:
-                                    <span className="text-text-title font-medium capitalize">{data.productCategory ?? '—'}</span>
-                                </div>
+                            <div className="flex items-center justify-end">
                                 <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border ${risk.badgeClass}`}>
                                     {risk.badge}
                                 </span>
                             </div>
                         </div>
 
+                        {/* Summary */}
                         <div className="mb-4">
                             <p className="text-base font-bold text-text-title mb-3">Summary</p>
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 flex-wrap">
                                 <SummaryBadge count={safeCount} label="Safe" dotClass="bg-[#43B75D]" badgeClass="bg-[#ECF8EF] text-[#43B75D] border-[#43B75D]" />
                                 <SummaryBadge count={riskyCount} label="Risky" dotClass="bg-risky" badgeClass="bg-[#FFF7E6] text-risky border-risky" />
                                 <SummaryBadge count={restrictedCount} label="Restricted" dotClass="bg-danger" badgeClass="bg-[#FDECEC] text-danger border-danger" />
-                                <SummaryBadge count={summary.unknown ?? ingredients.filter(i => i.safety === 'unknown').length} label="Unknown" dotClass="bg-gray-400" badgeClass="bg-gray-100 text-gray-500 border-gray-300"
-                                />
-                                {/* <SummaryBadge
-                                    count={ingredients.filter(i => i.safety === 'unknown').length}
-                                    label="Unknown"
-                                    dotClass="bg-gray-400"
-                                    badgeClass="bg-gray-100 text-gray-500 border-gray-300"
-                                /> */}
+                                <SummaryBadge count={unknownCount} label="Unknown" dotClass="bg-gray-400" badgeClass="bg-gray-100 text-gray-500 border-gray-300" />
                             </div>
                         </div>
 
+                        {/* Recommendations */}
                         {data.recommendations?.length > 0 && (
                             <div className="mb-4 bg-teal-50 rounded-2xl p-4">
                                 <p className="text-sm font-bold text-text-title mb-2">Recommendations</p>
@@ -227,6 +242,7 @@ export default function Results() {
                             </div>
                         )}
 
+                        {/* Ingredient Analysis */}
                         <div className="mb-6">
                             <p className="text-base font-bold text-text-title mb-3">Ingredient Analysis</p>
                             <div className="flex flex-col gap-3">
