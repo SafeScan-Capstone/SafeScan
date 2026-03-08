@@ -26,21 +26,25 @@ export default function SignUp() {
   }
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    setSubmitted(true)
-    const errs = validateSignup(values)
-    if (!consent) errs.consent = 'You must agree to the Privacy Policy to continue.'
-    setErrors(errs)
+    e.preventDefault();
+    setSubmitted(true);
+    const errs = validateSignup(values);
+    if (!consent) errs.consent = "You must agree to the Privacy Policy to continue.";
+    setErrors(errs);
     if (Object.keys(errs).length === 0) {
-      setLoading(true)
+      setLoading(true);
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: values.email, password: values.password, name: values.fullName }),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
+          body: JSON.stringify({
+            email: values.email,
+            password: values.password,
+            consent_given: true
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
 
         localStorage.setItem('userName', values.fullName)
         localStorage.setItem('userCreatedAt', data.user?.createdAt ?? new Date().toISOString())
