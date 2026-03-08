@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import SafeScanLogo from '../../assets/logo/safescan-logo.png'
 import { useAuth } from '../../context/AuthContext'
+import useScrolled from '../../hooks/useScrolled'
+import { drawerVariants, overlayVariants } from '../../animations/variants'
 
 const NAV_ITEMS = [
   {
@@ -49,7 +52,7 @@ function getInitials(name) {
   return name.trim().split(' ').map(n => n[0].toUpperCase()).slice(0, 2).join('')
 }
 
-function InitialsAvatar({ name, className = "h-9 w-9 text-sm" }) {
+function InitialsAvatar({ name, className = 'h-9 w-9 text-sm' }) {
   return (
     <div className={`rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0 ${className}`}>
       {getInitials(name)}
@@ -57,7 +60,7 @@ function InitialsAvatar({ name, className = "h-9 w-9 text-sm" }) {
   )
 }
 
-function GuestAvatar({ className = "h-9 w-9" }) {
+function GuestAvatar({ className = 'h-9 w-9' }) {
   return (
     <div className={`rounded-full bg-primary flex items-center justify-center shrink-0 ${className}`}>
       <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,14 +72,25 @@ function GuestAvatar({ className = "h-9 w-9" }) {
 
 function Toast({ message, visible }) {
   return (
-    <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[60] transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-      <div className="flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg">
-        <svg className="h-4 w-4 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-        </svg>
-        {message}
-      </div>
-    </div>
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key="toast"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25 }}
+          className="fixed top-5 left-1/2 -translate-x-1/2 z-[60]"
+        >
+          <div className="flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg">
+            <svg className="h-4 w-4 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {message}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
@@ -86,6 +100,7 @@ export default function Navbar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const scrolled = useScrolled(10)
 
   const showToast = (message) => {
     setToast({ visible: true, message })
@@ -112,7 +127,11 @@ export default function Navbar() {
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
-      <nav className="sticky top-0 z-30 bg-bg-primary shadow-sm">
+      <motion.nav
+        animate={{ boxShadow: scrolled ? '0 1px 16px rgba(0,0,0,0.08)' : '0 1px 0px rgba(0,0,0,0.04)' }}
+        transition={{ duration: 0.3 }}
+        className="sticky top-0 z-30 bg-bg-primary"
+      >
         <div className="mx-auto max-w-[1440px] flex items-center justify-between px-4 py-3 md:px-10 md:py-4">
 
           <Link to="/">
@@ -127,7 +146,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-teal-50 text-primary font-semibold'
                       : 'text-text-body hover:text-primary hover:bg-teal-50/50'
@@ -137,15 +156,23 @@ export default function Navbar() {
                     {item.icon}
                   </span>
                   {item.label}
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active-dot"
+                      className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary"
+                    />
+                  )}
                 </Link>
               )
             })}
 
             <div className="h-6 w-px bg-gray-200" />
 
-            <button
+            <motion.button
               type="button"
               onClick={handleViewProfile}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className="rounded-full ring-2 ring-transparent hover:ring-primary/30 transition-all"
             >
               {user?.avatar ? (
@@ -155,96 +182,130 @@ export default function Navbar() {
               ) : (
                 <GuestAvatar className="h-9 w-9" />
               )}
-            </button>
+            </motion.button>
           </div>
 
           {/* Mobile hamburger */}
-          <button
+          <motion.button
             type="button"
             onClick={() => setOpen(true)}
+            whileTap={{ scale: 0.9 }}
             className="flex md:hidden h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-teal-500/10 hover:text-teal-600"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </button>
+          </motion.button>
         </div>
-      </nav>
+      </motion.nav>
 
-      {open && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setOpen(false)} />
-      )}
+      {/* Mobile drawer with AnimatePresence */}
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              key="overlay"
+              variants={overlayVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed inset-0 z-40 bg-black/50 md:hidden"
+              onClick={() => setOpen(false)}
+            />
 
-      {/* Mobile drawer */}
-      <div className={`fixed top-0 right-0 z-50 h-full w-[285px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out md:hidden ${open ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex items-center justify-between px-6 pt-8 pb-6">
-          <div className="flex items-center gap-3">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="avatar" className="h-11 w-11 rounded-full object-cover" />
-            ) : user ? (
-              <InitialsAvatar name={user.name} className="h-11 w-11 text-base" />
-            ) : (
-              <GuestAvatar className="h-11 w-11" />
-            )}
-            <div>
-              <p className="font-semibold text-gray-900">{user?.name ?? 'User'}</p>
-              <button type="button" onClick={handleViewProfile} className="text-xs text-primary hover:underline flex items-center gap-1">
-                View Profile
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition-colors">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+            <motion.div
+              key="drawer"
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed top-0 right-0 z-50 h-full w-[285px] bg-white shadow-2xl flex flex-col md:hidden"
+            >
+              <div className="flex items-center justify-between px-6 pt-8 pb-6">
+                <div className="flex items-center gap-3">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="avatar" className="h-11 w-11 rounded-full object-cover" />
+                  ) : user ? (
+                    <InitialsAvatar name={user.name} className="h-11 w-11 text-base" />
+                  ) : (
+                    <GuestAvatar className="h-11 w-11" />
+                  )}
+                  <div>
+                    <p className="font-semibold text-gray-900">{user?.name ?? 'User'}</p>
+                    <button type="button" onClick={handleViewProfile} className="text-xs text-primary hover:underline flex items-center gap-1">
+                      View Profile
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </motion.button>
+              </div>
 
-        <div className="flex-1 px-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.path
-            return (
-              <Link
-                key={item.label}
-                to={item.path}
-                onClick={() => setOpen(false)}
-                className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-bg-secondary text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                  isActive ? 'bg-[#D1DEDB] text-primary' : 'bg-[#EEF8F6] text-text-secondary'
-                }`}>
-                  {item.icon}
-                </span>
-                {item.label}
-                {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-primary" />}
-              </Link>
-            )
-          })}
+              <div className="flex-1 px-4 space-y-1 overflow-y-auto">
+                {NAV_ITEMS.map((item, i) => {
+                  const isActive = pathname === item.path
+                  return (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 + i * 0.06, duration: 0.3 }}
+                    >
+                      <Link
+                        to={item.path}
+                        onClick={() => setOpen(false)}
+                        className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium transition-colors ${
+                          isActive ? 'bg-bg-secondary text-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                          isActive ? 'bg-[#D1DEDB] text-primary' : 'bg-[#EEF8F6] text-text-secondary'
+                        }`}>
+                          {item.icon}
+                        </span>
+                        {item.label}
+                        {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-primary" />}
+                      </Link>
+                    </motion.div>
+                  )
+                })}
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-danger transition-colors"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF8F6] text-text-secondary">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </span>
-            Logout
-          </button>
-        </div>
+                <motion.button
+                  type="button"
+                  onClick={handleLogout}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 + NAV_ITEMS.length * 0.06, duration: 0.3 }}
+                  className="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-danger transition-colors"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF8F6] text-text-secondary">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </span>
+                  Logout
+                </motion.button>
+              </div>
 
-        <div className="mx-4 mb-8 rounded-[16px] bg-primary px-5 py-4 text-white text-center">
-          <p className="text-xs font-medium opacity-80">SafeScan Pro</p>
-          <p className="text-sm font-medium mt-0.5">Upgrade for unlimited scans</p>
-        </div>
-      </div>
+              <div className="mx-4 mb-8 rounded-[16px] bg-primary px-5 py-4 text-white text-center">
+                <p className="text-xs font-medium opacity-80">SafeScan Pro</p>
+                <p className="text-sm font-medium mt-0.5">Upgrade for unlimited scans</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }
