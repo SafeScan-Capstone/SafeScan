@@ -1,8 +1,10 @@
+import { motion } from 'framer-motion'
 import { useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import SummaryBadge from "../components/ingredients/SummaryBadge";
 import IngredientResultCard from "../components/ingredients/IngredientResultCard";
 import Button from "../components/ui/Button";
+import { staggerContainer, fadeUp, EASE_SPRING } from '../animations/variants'
 import bottle1 from '../assets/images/bottle1.jpeg'
 import bottle2 from '../assets/images/bottle2.jpeg'
 import bottle3 from '../assets/images/bottle3.jpeg'
@@ -30,8 +32,6 @@ function getSessionBottle() {
     }
     return BOTTLE_IMAGES[Number(idx)]
 }
-
-// ---------------------------------------------------------------------------
 
 const RISK_CONFIG = {
     HIGH: {
@@ -152,15 +152,27 @@ export default function Results() {
     const aiAnalyzedCount = ingredients.filter(i => i.fromAI || i.fromGemini).length
 
     return (
-        <div className="mx-auto max-w-md md:max-w-[1440px] px-4 py-6 md:px-10 md:py-8">
+        <motion.div
+            variants={fadeUp}
+            custom={0}
+            initial="hidden"
+            animate="visible"
+            className="mx-auto max-w-md md:max-w-[1440px] px-4 py-6 md:px-10 md:py-8"
+        >
             <div className="flex items-center justify-between mb-5 md:mb-8">
-                <button type="button" onClick={() => navigate(-1)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-text-title hover:text-primary transition-colors">
+                <motion.button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    whileHover={{ x: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-1.5 text-sm font-medium text-text-title hover:text-primary transition-colors"
+                >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                     Back
-                </button>
+                </motion.button>
                 <h1 className="text-base font-bold text-primary">Scan Results</h1>
                 <div className="w-12" />
             </div>
@@ -169,7 +181,12 @@ export default function Results() {
                 <div className="flex flex-col md:flex-row md:gap-16 md:items-start">
 
                     {/* Left column — rotating bottle image */}
-                    <div className="md:w-[380px] md:shrink-0 md:flex md:flex-col">
+                    <motion.div
+                        initial={{ opacity: 0, x: -24 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.55, ease: EASE_SPRING }}
+                        className="md:w-[380px] md:shrink-0 md:flex md:flex-col"
+                    >
                         <div className="relative rounded-2xl overflow-hidden h-[400px] md:flex-1 mb-4 bg-[#F2FAF9]">
                             <img
                                 src={bottleImage}
@@ -194,67 +211,97 @@ export default function Results() {
                             </div>
                         </div>
                         <Button text="Scan Another" variant="primary" onClick={() => navigate('/scan-home')} />
-                    </div>
+                </motion.div>
 
-                    {/* Right column — results */}
-                    <div className="flex-1 mt-5 md:max-w-[520px] md:mt-0">
+                {/* Right column — results */}
+                <motion.div
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.55, ease: EASE_SPRING, delay: 0.08 }}
+                    className="flex-1 mt-5 md:max-w-[520px] md:mt-0"
+                >
 
-                        {/* Risk banner — NO product name or category */}
-                        <div className={`rounded-2xl p-4 mb-5 ${risk.bannerClass}`}>
-                            <div className={`flex items-center gap-2 mb-2 ${risk.iconClass}`}>
-                                {risk.icon}
-                                <p className={`font-bold text-base ${risk.labelClass}`}>{risk.label}</p>
-                            </div>
-                            <p className="text-sm text-text-body mb-3">{risk.description}</p>
-                            {data.disclaimer && (
-                                <p className="text-xs text-text-secondary italic mb-3">{data.disclaimer}</p>
-                            )}
-                            <div className="flex items-center justify-end">
-                                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border ${risk.badgeClass}`}>
-                                    {risk.badge}
-                                </span>
-                            </div>
+                    {/* Risk banner — NO product name or category */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, ease: EASE_SPRING, delay: 0.15 }}
+                        className={`rounded-2xl p-4 mb-5 ${risk.bannerClass}`}
+                    >
+                        <div className={`flex items-center gap-2 mb-2 ${risk.iconClass}`}>
+                            {risk.icon}
+                            <p className={`font-bold text-base ${risk.labelClass}`}>{risk.label}</p>
                         </div>
-
-                        {/* Summary */}
-                        <div className="mb-4">
-                            <p className="text-base font-bold text-text-title mb-3">Summary</p>
-                            <div className="flex gap-3 flex-wrap">
-                                <SummaryBadge count={safeCount} label="Safe" dotClass="bg-[#43B75D]" badgeClass="bg-[#ECF8EF] text-[#43B75D] border-[#43B75D]" />
-                                <SummaryBadge count={riskyCount} label="Risky" dotClass="bg-risky" badgeClass="bg-[#FFF7E6] text-risky border-risky" />
-                                <SummaryBadge count={restrictedCount} label="Restricted" dotClass="bg-danger" badgeClass="bg-[#FDECEC] text-danger border-danger" />
-                                <SummaryBadge count={unknownCount} label="Unknown" dotClass="bg-gray-400" badgeClass="bg-gray-100 text-gray-500 border-gray-300" />
-                            </div>
-                        </div>
-
-                        {/* Recommendations */}
-                        {data.recommendations?.length > 0 && (
-                            <div className="mb-4 bg-teal-50 rounded-2xl p-4">
-                                <p className="text-sm font-bold text-text-title mb-2">Recommendations</p>
-                                <ul className="flex flex-col gap-1">
-                                    {data.recommendations.map((rec, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-sm text-text-body">
-                                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                                            {rec}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                        <p className="text-sm text-text-body mb-3">{risk.description}</p>
+                        {data.disclaimer && (
+                            <p className="text-xs text-text-secondary italic mb-3">{data.disclaimer}</p>
                         )}
-
-                        {/* Ingredient Analysis */}
-                        <div className="mb-6">
-                            <p className="text-base font-bold text-text-title mb-3">Ingredient Analysis</p>
-                            <div className="flex flex-col gap-3">
-                                {sortedIngredients.map((ingredient) => (
-                                    <IngredientResultCard key={ingredient.id} {...ingredient} />
-                                ))}
-                            </div>
+                        <div className="flex items-center justify-end">
+                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border ${risk.badgeClass}`}>
+                                {risk.badge}
+                            </span>
                         </div>
+                    </motion.div>
 
-                    </div>
-                </div>
+                    {/* Summary */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.22 }}
+                        className="mb-4"
+                    >
+                        <p className="text-base font-bold text-text-title mb-3">Summary</p>
+                        <div className="flex gap-3 flex-wrap">
+                            <SummaryBadge count={safeCount} label="Safe" dotClass="bg-[#43B75D]" badgeClass="bg-[#ECF8EF] text-[#43B75D] border-[#43B75D]" />
+                            <SummaryBadge count={riskyCount} label="Risky" dotClass="bg-risky" badgeClass="bg-[#FFF7E6] text-risky border-risky" />
+                            <SummaryBadge count={restrictedCount} label="Restricted" dotClass="bg-danger" badgeClass="bg-[#FDECEC] text-danger border-danger" />
+                            <SummaryBadge count={unknownCount} label="Unknown" dotClass="bg-gray-400" badgeClass="bg-gray-100 text-gray-500 border-gray-300" />
+                        </div>
+                    </motion.div>
+
+                    {/* Recommendations */}
+                    {data.recommendations?.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.28 }}
+                            className="mb-4 bg-teal-50 rounded-2xl p-4"
+                        >
+                            <p className="text-sm font-bold text-text-title mb-2">Recommendations</p>
+                            <ul className="flex flex-col gap-1">
+                                {data.recommendations.map((rec, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-sm text-text-body">
+                                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                        {rec}
+                                    </li>
+                                ))}
+                            </ul>
+                        </motion.div>
+                    )}
+
+                    {/* Ingredient analysis */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.32 }}
+                        className="mb-6"
+                    >
+                        <p className="text-base font-bold text-text-title mb-3">Ingredient Analysis</p>
+                        <motion.div
+                            variants={staggerContainer}
+                            initial="hidden"
+                            animate="visible"
+                            className="flex flex-col gap-3"
+                        >
+                            {sortedIngredients.map((ingredient) => (
+                                <IngredientResultCard key={ingredient.id} {...ingredient} />
+                            ))}
+                        </motion.div>
+                    </motion.div>
+
+                </motion.div>
             </div>
         </div>
+        </motion.div >
     )
 }

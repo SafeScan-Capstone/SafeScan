@@ -1,23 +1,25 @@
-# TODO - AI Action Endpoint Implementation
+# TODO: Fix Scan Saving Issue
 
-## Implementation Tasks:
-- [x] Plan the implementation
-- [ ] Create src/services/aiExplain.service.js - AI service for explaining ingredients
-- [ ] Create src/controllers/ai.controller.js - Controller with explainIngredients
-- [ ] Create src/routes/ai.routes.js - Route file with POST /explain endpoint
-- [ ] Update src/routes/index.js - Add AI route with requireAuth
-- [ ] Update src/middlewares/validation.js - Add validation schema for ingredients
-- [ ] Update src/docs/openapi.json - Add POST /api/aiAction endpoint documentation
+## Task Summary
+Fix the scan controller so authenticated requests save scans and return scanId.
 
-## Validation Rules:
-- ingredients must be array of 1-30 strings
-- Each string trimmed length 2-80
-- Reject empty items
+## Steps
+- [x] 1. Update userId derivation in scanImage controller to use nullish coalescing operator (??)
+- [x] 2. Update userId derivation in analyzeText controller to use nullish coalescing operator (??)
+- [x] 3. Verify overall_risk is correctly mapped from analysis.risk_level
+- [x] 4. Ensure scan_ingredients inserts use the returned scanId
+- [x] 5. Verify rollback and detailed error logging is present
+- [x] 6. Verify saveError is included in API response when saved=false
 
-## AI Service Requirements:
-- Use env vars: AI_PROVIDER, AI_API_KEY, AI_MODEL
-- Timeout: 20 seconds
-- Retry once on non-JSON response
+## Database Schema Fix
+- [x] 7. Update initSchema() to also run migrations (including 002_add_overall_risk_to_scans.sql)
+- [x] 8. Add startup log confirming schema applied
+- [x] 9. Ensure schema.sql has overall_risk column in scans table (already present)
 
-## Rate Limiting:
-- 20 requests per 5 minutes per IP for /api/ai route
+## Implementation Details
+- Use: const userId = req.user?.id ?? req.user?.userId ?? req.user?.sub ?? null;
+- Ensure INSERT includes: user_id, image_path, ocr_text, product_category, overall_risk
+- Use RETURNING id to get the inserted scan ID
+- Log dbError: message, code, detail, constraint
+- Include saveError in response when saved=false
+

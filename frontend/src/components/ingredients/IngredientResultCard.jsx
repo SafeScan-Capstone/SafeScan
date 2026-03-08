@@ -1,61 +1,78 @@
+// import { motion } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { staggerItem } from '../../animations/variants'
+
 const INGREDIENT_DOT = {
-    restricted: 'bg-danger',
-    risky: 'bg-risky',
-    safe: 'bg-[#43B75D]',
-    unknown: 'bg-gray-300',
+  restricted: 'bg-danger',
+  risky: 'bg-risky',
+  safe: 'bg-[#43B75D]',
+  unknown: 'bg-gray-300',
 }
 
 const INGREDIENT_BORDER = {
-    restricted: 'border-[#FAC5C3]',
-    risky: 'border-[#FFE5B0]',
-    safe: 'border-[#C5E9CD]',
-    unknown: 'border-gray-200',
+  restricted: 'border-[#FAC5C3]',
+  risky: 'border-[#FFE5B0]',
+  safe: 'border-[#C5E9CD]',
+  unknown: 'border-gray-200',
+}
+
+const INGREDIENT_BG_HOVER = {
+  restricted: 'hover:bg-[#FFF5F5]',
+  risky: 'hover:bg-[#FFFBF0]',
+  safe: 'hover:bg-[#F5FBF6]',
+  unknown: 'hover:bg-gray-50',
 }
 
 const INGREDIENT_CORNER_ICON = {
-    restricted: (
-        <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white">
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        </span>
-    ),
-    risky: (
-        <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-risky text-white">
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        </span>
-    ),
-    safe: null,
-    unknown: null,
+  restricted: (
+    <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white">
+      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </span>
+  ),
+  risky: (
+    <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-risky text-white">
+      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </span>
+  ),
+  safe: null,
+  unknown: null,
 }
 
 const FALLBACK_DESCRIPTION = {
-    safe: 'A recognized ingredient considered safe for typical cosmetic use.',
-    risky: 'This ingredient may cause sensitivity or irritation in some individuals.',
-    restricted: 'This ingredient is restricted or banned in some regions due to safety concerns.',
-    unknown: 'We could not verify this ingredient. If you have concerns, consult a dermatologist.',
+  safe: 'A recognized ingredient considered safe for typical cosmetic use.',
+  risky: 'This ingredient may cause sensitivity or irritation in some individuals.',
+  restricted: 'This ingredient is restricted or banned in some regions due to safety concerns.',
+  unknown: 'We could not verify this ingredient. If you have concerns, consult a dermatologist.',
 }
 
 export default function IngredientResultCard({ name, safety = 'unknown', description }) {
-    const resolvedSafety = ['safe', 'risky', 'restricted', 'unknown'].includes(safety) ? safety : 'unknown'
+  const resolvedSafety = ['safe', 'risky', 'restricted', 'unknown'].includes(safety) ? safety : 'unknown'
 
-    const dot = INGREDIENT_DOT[resolvedSafety]
-    const cornerIcon = INGREDIENT_CORNER_ICON[resolvedSafety] ?? null
-    const border = INGREDIENT_BORDER[resolvedSafety]
-    const displayDescription = description || FALLBACK_DESCRIPTION[resolvedSafety]
+  const dot = INGREDIENT_DOT[resolvedSafety]
+  const cornerIcon = INGREDIENT_CORNER_ICON[resolvedSafety] ?? null
+  const border = INGREDIENT_BORDER[resolvedSafety]
+  const displayDescription = description || FALLBACK_DESCRIPTION[resolvedSafety]
+  const bgHover = INGREDIENT_BG_HOVER[safety] ?? INGREDIENT_BG_HOVER.unknown
 
-    return (
-        <div className={`relative rounded-2xl px-4 py-3.5 border ${border} shadow-sm`}>
-            {cornerIcon}
-            <div className="flex items-center gap-2 mb-1">
-                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dot}`} />
-                <p className="text-sm font-bold text-text-title pr-8">{name}</p>
-            </div>
-            <p className="text-xs text-text-body leading-relaxed pl-4">
-                {displayDescription}
-            </p>
-        </div>
-    )
+  return (
+    <motion.div
+      variants={staggerItem}
+      whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
+      transition={{ duration: 0.2 }}
+      className={`relative rounded-2xl px-4 py-3.5 border ${border} shadow-sm transition-colors ${bgHover}`}
+    >
+      {cornerIcon}
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dot}`} />
+        <p className="text-sm font-bold text-text-title">{name}</p>
+      </div>
+      <p className="text-xs text-text-body leading-relaxed pl-4">
+        {displayDescription}
+      </p>
+    </motion.div>
+  )
 }

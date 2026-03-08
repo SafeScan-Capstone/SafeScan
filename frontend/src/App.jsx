@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import './themes/variables.css'
 import './styles/global.css'
 import './index.css'
@@ -17,13 +18,15 @@ import Landing from './pages/Landing'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import About from './pages/About'
 import OCRReview from './pages/OCRReview'
+import NotFound from './pages/NotFound'
 import ConfirmIngredients from './components/camera/ConfirmIngredients'
 import Analyzing from './components/camera/Analyzing'
 
 const AUTH_PAGES = ['/register', '/login', '/scan-result']
 
 function AppLayout() {
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
   const hideNavbar = AUTH_PAGES.some(path => pathname.startsWith(path))
 
   return (
@@ -31,29 +34,24 @@ function AppLayout() {
       <ScrollToTop />
       {!hideNavbar && <Navbar />}
       <main>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<SignUp />} />
-          <Route path="/login" element={<SignIn />} />
-          <Route path="/scan-home" element={<ScanLanding />} />
-          <Route path="/lookup" element={<Lookup />} />
-          <Route path="/ocr-review" element={<OCRReview />} />
-          <Route path="/history" element={
-            <PrivateRoute>
-              <History />
-            </PrivateRoute>
-          } />
-          <Route path="/scan-result/:id" element={<Results />} />
-          <Route path="/settings" element={
-            <PrivateRoute>
-              <Settings />
-            </PrivateRoute>
-          } />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/confirm" element={<ConfirmIngredients />} />
-          <Route path="/analyzing" element={<Analyzing />} />
-        </Routes>
+        <AnimatePresence mode="wait" initial={false}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/"              element={<Landing />} />
+            <Route path="/register"      element={<SignUp />} />
+            <Route path="/login"         element={<SignIn />} />
+            <Route path="/scan-home"     element={<ScanLanding />} />
+            <Route path="/lookup"        element={<Lookup />} />
+            <Route path="/ocr-review"    element={<OCRReview />} />
+            <Route path="/history"       element={<PrivateRoute><History /></PrivateRoute>} />
+            <Route path="/scan-result/:id" element={<Results />} />
+            <Route path="/settings"      element={<PrivateRoute><Settings /></PrivateRoute>} />
+            <Route path="/privacy"       element={<PrivacyPolicy />} />
+            <Route path="/about"         element={<About />} />
+            <Route path="/confirm"       element={<ConfirmIngredients />} />
+            <Route path="/analyzing"     element={<Analyzing />} />
+            <Route path="*"              element={<NotFound />} />
+          </Routes>
+        </AnimatePresence>
       </main>
     </div>
   )
