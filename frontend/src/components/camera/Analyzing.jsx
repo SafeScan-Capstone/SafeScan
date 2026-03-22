@@ -244,7 +244,7 @@ export default function Analyzing() {
                             summary,
                             risk_level: overallRiskLevel,
                             productCategory,
-                        }
+                        },
                     }
                 })
             } catch (err) {

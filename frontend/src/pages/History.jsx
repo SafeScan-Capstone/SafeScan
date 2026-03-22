@@ -36,7 +36,7 @@ export default function History() {
       setLoading(true)
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scan`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scans`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         const data = await res.json()

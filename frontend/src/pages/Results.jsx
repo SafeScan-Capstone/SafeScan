@@ -116,8 +116,8 @@ export default function Results() {
     const location = useLocation()
     const data = location.state?.result
 
-    // Pick bottle once per session
-    const bottleImage = useMemo(() => getSessionBottle(), [])
+    // Use scanned image if available, otherwise pick a placeholder bottle
+    const bottleImage = useMemo(() => sessionStorage.getItem('safescan_last_image') ?? getSessionBottle(), [])
 
     if (!data) {
         navigate('/scan-home', { replace: true })
