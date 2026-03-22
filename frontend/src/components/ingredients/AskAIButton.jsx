@@ -1,4 +1,5 @@
 import { useState } from "react"
+import apiUrl from '../../utils/apiUrl'
 
 export default function AskAIButton({ name }) {
     const [loading, setLoading] = useState(false)
@@ -12,7 +13,7 @@ export default function AskAIButton({ name }) {
         setOpen(true)
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/aiAction/explain`, {
+            const response = await fetch(`${apiUrl}/api/aiAction/explain`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

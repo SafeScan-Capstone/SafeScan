@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import apiUrl from '../../utils/apiUrl'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
@@ -135,7 +136,7 @@ export default function Analyzing() {
                 const requestBody = { text: ingredients }
                 if (productCategory) requestBody.productCategory = productCategory
 
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scan/analyze`, {
+                const res = await fetch(`${apiUrl}/api/scan/analyze`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(requestBody)

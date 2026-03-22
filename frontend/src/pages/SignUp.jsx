@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import apiUrl from '../utils/apiUrl'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthTitle from '../components/ui/AuthTitle'
@@ -34,7 +35,7 @@ export default function SignUp() {
     if (Object.keys(errs).length === 0) {
       setLoading(true);
       try {
-        // const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        // const res = await fetch(`${apiUrl}/api/auth/register`, {
         //   method: 'POST',
         //   headers: { 'Content-Type': 'application/json' },
         //   body: JSON.stringify({
@@ -46,7 +47,7 @@ export default function SignUp() {
         // const data = await res.json();
         // if (!res.ok) throw new Error(data.error);
 
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        const res = await fetch(`${apiUrl}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -63,7 +64,7 @@ export default function SignUp() {
         localStorage.setItem('userName', values.fullName)
         localStorage.setItem('userCreatedAt', data.user?.createdAt ?? new Date().toISOString())
 
-        const loginRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        const loginRes = await fetch(`${apiUrl}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: values.email, password: values.password }),
