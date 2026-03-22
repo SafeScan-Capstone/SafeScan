@@ -24,14 +24,9 @@ export function AuthProvider({ children }) {
 
     const login = (userData, token) => {
         localStorage.setItem('token', token)
-        localStorage.removeItem('guestScanCount') // reset on login
-        // store name against the specific email so different users get their own name
-        if (userData.name) {
-            localStorage.setItem(`userName_${userData.email}`, userData.name)
-        }
-        if (userData.createdAt) {
-            localStorage.setItem(`userCreatedAt_${userData.email}`, userData.createdAt)
-        }
+        localStorage.removeItem('guestScanCount')
+        if (userData.name) localStorage.setItem(`userName_${userData.email}`, userData.name)
+        if (userData.createdAt) localStorage.setItem(`userCreatedAt_${userData.email}`, userData.createdAt)
         setUser(userData)
     }
 
@@ -40,8 +35,16 @@ export function AuthProvider({ children }) {
         setUser(null)
     }
 
+    const updateUser = (updates) => {
+        setUser(prev => {
+            const updated = { ...prev, ...updates }
+            if (updates.name) localStorage.setItem(`userName_${prev.email}`, updates.name)
+            return updated
+        })
+    }
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoggedIn: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, isLoggedIn: !!user }}>
             {children}
         </AuthContext.Provider>
     )
