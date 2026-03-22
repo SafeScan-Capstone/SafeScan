@@ -19,6 +19,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import About from './pages/About'
 import OCRReview from './pages/OCRReview'
 import NotFound from './pages/NotFound'
+import EditProfile from './pages/EditProfile'
+import ForgotPassword from './pages/ForgotPassword'
 import ConfirmIngredients from './components/camera/ConfirmIngredients'
 import Analyzing from './components/camera/Analyzing'
 
@@ -47,9 +49,11 @@ function AppLayout() {
             <Route path="/settings"      element={<PrivateRoute><Settings /></PrivateRoute>} />
             <Route path="/privacy"       element={<PrivacyPolicy />} />
             <Route path="/about"         element={<About />} />
-            <Route path="/confirm"       element={<ConfirmIngredients />} />
-            <Route path="/analyzing"     element={<Analyzing />} />
-            <Route path="*"              element={<NotFound />} />
+            <Route path="/confirm"         element={<ConfirmIngredients />} />
+            <Route path="/analyzing"       element={<Analyzing />} />
+            <Route path="/edit-profile"    element={<PrivateRoute><EditProfile /></PrivateRoute>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="*"                element={<NotFound />} />
           </Routes>
         </AnimatePresence>
       </main>

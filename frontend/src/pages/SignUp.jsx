@@ -52,6 +52,7 @@ export default function SignUp() {
           body: JSON.stringify({
             email: values.email,
             password: values.password,
+            name: values.fullName,
             consent_given: true
           })
         });

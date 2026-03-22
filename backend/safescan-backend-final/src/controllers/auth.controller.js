@@ -18,7 +18,7 @@ const getJwtSecret = () => {
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, consent_given } = req.body;
+    const { email, password, consent_given, name } = req.body;
 
     // Validate consent is given (POPIA/GDPR requirement)
     if (consent_given !== true) {
@@ -74,8 +74,8 @@ exports.register = async (req, res) => {
     let newUser;
     try {
       newUser = await db.query(
-        'INSERT INTO users (email, password, consent_given, consent_timestamp) VALUES ($1, $2, $3, NOW()) RETURNING id, email, consent_given, consent_timestamp, created_at',
-        [email, hashedPassword, true]
+        'INSERT INTO users (email, password, name, consent_given, consent_timestamp) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, email, name, consent_given, consent_timestamp, created_at',
+        [email, hashedPassword, name || null, true]
       );
     } catch (dbError) {
       console.error('Database insert error:', dbError.message);
@@ -89,6 +89,7 @@ exports.register = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         consent_given: user.consent_given,
         consent_timestamp: user.consent_timestamp,
         createdAt: user.created_at
@@ -122,7 +123,7 @@ exports.login = async (req, res) => {
     // Query the database for user with the provided email
     let result;
     try {
-      result = await db.query('SELECT id, email, password FROM users WHERE email = $1 LIMIT 1', [email]);
+      result = await db.query('SELECT id, email, password, name, created_at FROM users WHERE email = $1 LIMIT 1', [email]);
     } catch (dbError) {
       console.error('Database query error:', dbError.message);
       console.error('Stack:', dbError.stack);
@@ -145,8 +146,16 @@ exports.login = async (req, res) => {
     }
 
     // Password matches - generate JWT token
-    const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret, { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret, { expiresIn: '24h' });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: user.created_at,
+      }
+    });
   } catch (e) {
     // Handle JWT signing errors
     if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') {

@@ -15,7 +15,8 @@ export function AuthProvider({ children }) {
             return {
                 email: payload.email,
                 name: localStorage.getItem(`userName_${payload.email}`) ?? payload.email.split('@')[0],
-                createdAt: localStorage.getItem(`userCreatedAt_${payload.email}`) ?? new Date().toISOString()
+                createdAt: localStorage.getItem(`userCreatedAt_${payload.email}`) ?? new Date().toISOString(),
+                avatar: localStorage.getItem(`userAvatar_${payload.email}`) ?? null,
             }
         } catch {
             return null
@@ -24,14 +25,10 @@ export function AuthProvider({ children }) {
 
     const login = (userData, token) => {
         localStorage.setItem('token', token)
-        localStorage.removeItem('guestScanCount') // reset on login
-        // store name against the specific email so different users get their own name
-        if (userData.name) {
-            localStorage.setItem(`userName_${userData.email}`, userData.name)
-        }
-        if (userData.createdAt) {
-            localStorage.setItem(`userCreatedAt_${userData.email}`, userData.createdAt)
-        }
+        localStorage.removeItem('guestScanCount')
+        if (userData.name) localStorage.setItem(`userName_${userData.email}`, userData.name)
+        if (userData.createdAt) localStorage.setItem(`userCreatedAt_${userData.email}`, userData.createdAt)
+        if (userData.avatar) localStorage.setItem(`userAvatar_${userData.email}`, userData.avatar)
         setUser(userData)
     }
 
@@ -40,8 +37,20 @@ export function AuthProvider({ children }) {
         setUser(null)
     }
 
+    const updateUser = (updates) => {
+        setUser(prev => {
+            const updated = { ...prev, ...updates }
+            if (updates.name) localStorage.setItem(`userName_${prev.email}`, updates.name)
+            if (updates.avatar !== undefined) {
+                if (updates.avatar) localStorage.setItem(`userAvatar_${prev.email}`, updates.avatar)
+                else localStorage.removeItem(`userAvatar_${prev.email}`)
+            }
+            return updated
+        })
+    }
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoggedIn: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, isLoggedIn: !!user }}>
             {children}
         </AuthContext.Provider>
     )
