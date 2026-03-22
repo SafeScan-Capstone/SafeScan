@@ -35,7 +35,7 @@ export default function ScanLanding() {
       const formData = new FormData()
       formData.append('image', blob, 'scan.jpg')
 
-      const res = await fetch('/api/scan', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scan`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
