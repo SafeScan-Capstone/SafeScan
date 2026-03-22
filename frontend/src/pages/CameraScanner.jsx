@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import apiUrl from '../utils/apiUrl'
 import { useNavigate } from 'react-router-dom'
 import UploadModal from '../modals/UploadModal'
 import ExitConfirmModal from '../modals/ExitConfirmModal'
@@ -52,7 +53,7 @@ export default function CameraScanner({ onClose, productCategory }) {
             formData.append('image', file)
             if (productCategory) formData.append('productCategory', productCategory)
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scan`, {
+            const res = await fetch(`${apiUrl}/api/scan`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData

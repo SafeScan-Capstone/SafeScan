@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import apiUrl from '../utils/apiUrl'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import productOverlay from '../assets/images/product-overlay.svg'
@@ -35,7 +36,7 @@ export default function ScanLanding() {
       const formData = new FormData()
       formData.append('image', blob, 'scan.jpg')
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scan`, {
+      const res = await fetch(`${apiUrl}/api/scan`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import apiUrl from '../utils/apiUrl'
 import { motion } from 'framer-motion'
 import EmptyHistory from '../components/history/EmptyHistory'
 import HistoryCard from '../components/history/HistoryCard'
@@ -36,7 +37,7 @@ export default function History() {
       setLoading(true)
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/scans`, {
+        const res = await fetch(`${apiUrl}/api/scans`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         const data = await res.json()

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import apiUrl from '../utils/apiUrl'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -46,7 +47,7 @@ export default function EditProfile() {
         setSuccess(false)
         try {
             const token = localStorage.getItem('token')
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+            const res = await fetch(`${apiUrl}/api/user/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
