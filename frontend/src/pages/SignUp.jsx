@@ -34,6 +34,18 @@ export default function SignUp() {
     if (Object.keys(errs).length === 0) {
       setLoading(true);
       try {
+        // const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({
+        //     email: values.email,
+        //     password: values.password,
+        //     consent_given: true
+        //   })
+        // });
+        // const data = await res.json();
+        // if (!res.ok) throw new Error(data.error);
+
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -43,7 +55,7 @@ export default function SignUp() {
             consent_given: true
           })
         });
-        const data = await res.json();
+        const data = await res.json()
         if (!res.ok) throw new Error(data.error);
 
         localStorage.setItem('userName', values.fullName)

@@ -33,13 +33,22 @@ export default function SignIn() {
     if (Object.keys(errs).length === 0) {
       setLoading(true)
       try {
+        // const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ email: values.email, password: values.password }),
+        // })
+        // const data = await res.json()
+        // if (!res.ok) throw new Error(data.error)
+
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: values.email, password: values.password }),
         })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
+        const text = await res.text()
+        const data = text ? JSON.parse(text) : {}
+        if (!res.ok) throw new Error(data.error ?? 'Login failed')
 
         const savedName = localStorage.getItem(`userName_${values.email}`)
         const savedCreatedAt = localStorage.getItem(`userCreatedAt_${values.email}`)
