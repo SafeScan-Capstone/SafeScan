@@ -11,24 +11,19 @@ export default function AskAIButton({ name }) {
         setError(null)
         setOpen(true)
         try {
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            const token = localStorage.getItem('token')
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/aiAction/explain`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token && { Authorization: `Bearer ${token}` }),
                 },
-                body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
-                    max_tokens: 1000,
-                    messages: [
-                        {
-                            role: 'user',
-                            content: `You are a cosmetic ingredient safety expert. In 2-3 short sentences, explain what the ingredient "${name}" is, what it does in cosmetic products, and whether it is generally considered safe or a concern for skin. Be concise and use simple language a regular consumer would understand. End with a one-word safety label: SAFE, CAUTION, or AVOID.`
-                        }
-                    ]
-                })
+                body: JSON.stringify({ ingredients: [name] })
             })
             const data = await response.json()
-            const text = data.content?.[0]?.text ?? 'Could not get a response.'
+            if (!response.ok) throw new Error(data.error ?? 'AI unavailable')
+            const result = Array.isArray(data) ? data[0] : null
+            const text = result?.explanation ?? 'Could not get a response.'
             setAiResult(text)
         } catch (err) {
             setError('Failed to get AI response. Please try again.')

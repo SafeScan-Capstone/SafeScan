@@ -62,6 +62,9 @@ export default function CameraScanner({ onClose, productCategory }) {
             if (!res.ok) throw new Error(data.error ?? `Server error (${res.status})`)
 
             localStorage.setItem('guestScanCount', '1')
+            const reader = new FileReader()
+            reader.onload = () => sessionStorage.setItem('safescan_last_image', reader.result)
+            reader.readAsDataURL(file)
             navigate('/confirm', {
                 state: {
                     extractedText: data.extractedText ?? '',

@@ -45,7 +45,8 @@ export default function ScanLanding() {
       if (res.status === 401) { localStorage.removeItem('token'); navigate('/login'); return }
       if (!res.ok) { alert(data.error || 'Failed to scan image. Please try again.'); return }
 
-      navigate('/confirm', { state: { imageData, extractedText: data.extractedText } })
+      sessionStorage.setItem('safescan_last_image', imageData)
+      navigate('/confirm', { state: { extractedText: data.extractedText } })
     } catch {
       alert('Failed to scan image. Please try again.')
     } finally {
