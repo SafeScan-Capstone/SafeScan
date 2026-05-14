@@ -13,13 +13,10 @@ const safeLogger = require('./utils/safeLogger');
 const app = express();
 
 // Check required env vars
-const requiredEnv = ['JWT_SECRET', 'CORS_ORIGIN'];
-requiredEnv.forEach(key => {
-  if (!process.env[key]) {
-    console.error(`Missing required environment variable: ${key}`);
-    process.exit(1);
-  }
-});
+if (!process.env.JWT_SECRET) {
+  console.error('Missing required environment variable: JWT_SECRET');
+  process.exit(1);
+}
 
 // Security headers
 app.use(helmet({
@@ -27,8 +24,14 @@ app.use(helmet({
 }));
 
 // CORS for specific origin
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,
+  'http://localhost:5173',
+  'https://frontend-six-eta-z24iaia2wv.vercel.app',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [process.env.CORS_ORIGIN, 'http://localhost:5173'],
+  origin: allowedOrigins,
   credentials: true,
 }));
 
