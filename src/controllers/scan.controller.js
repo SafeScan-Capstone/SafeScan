@@ -26,14 +26,10 @@ const MAX_AI_INGREDIENTS = parseInt(process.env.MAX_AI_INGREDIENTS || '25', 10);
  * If guest: returns results without saving
  */
 exports.scanImage = async (req, res) => {
-  const client = await db.pool.connect();
-  
-  // Determine if user is authenticated
   const isAuthenticated = req.user && req.user.id;
   const mode = isAuthenticated ? 'user' : 'guest';
-  
+
   try {
-    // Check if image file is present
     if (!req.file) {
       return res.status(400).json({
         error: "Image file is required. Use multipart/form-data with key 'image'.",
@@ -46,67 +42,18 @@ exports.scanImage = async (req, res) => {
       extractedText = await ocr(req.file.buffer);
     } catch (ocrError) {
       console.error('OCR processing error:', ocrError.message);
-      
-      // Handle specific OCR error codes from OCR.Space
-      if (ocrError.code === 'OCR_NOT_CONFIGURED') {
-        return res.status(503).json({
-          error: 'OCR service not configured',
-          details: 'Please set OCR_SPACE_API_KEY in environment variables',
-          requestId: req.id,
-        });
-      }
-      
-      if (ocrError.code === 'OCR_DAILY_LIMIT') {
-        return res.status(503).json({
-          error: 'OCR daily limit exceeded',
-          details: 'OCR.Space free API daily limit reached. Try again tomorrow.',
-          requestId: req.id,
-        });
-      }
-      
-      if (ocrError.code === 'OCR_AUTH_FAILED') {
-        return res.status(503).json({
-          error: 'OCR API key invalid',
-          details: 'Please check your OCR_SPACE_API_KEY',
-          requestId: req.id,
-        });
-      }
-      
-      if (ocrError.code === 'OCR_NETWORK_ERROR') {
-        return res.status(503).json({
-          error: 'OCR service unavailable',
-          details: 'Network error connecting to OCR service',
-          requestId: req.id,
-        });
-      }
-      
-      if (ocrError.code === 'OCR_TIMEOUT') {
-        return res.status(503).json({
-          error: 'OCR service timed out',
-          details: 'The image took too long to process. Try a smaller image.',
-          requestId: req.id,
-        });
-      }
-      
-      if (ocrError.code === 'OCR_FAILED') {
-        if (ocrError.response?.data) {
-          console.error('OCR API error response:', JSON.stringify(ocrError.response.data));
-        }
-        return res.status(500).json({
-          error: 'OCR processing failed',
-          details: ocrError.message || 'Failed to extract text from image',
-          requestId: req.id,
-        });
-      }
-      
-      return res.status(500).json({
-        error: 'Scan processing failed',
-        details: 'OCR extraction failed',
-        requestId: req.id,
-      });
+      const ocrMessages = {
+        OCR_NOT_CONFIGURED: ['OCR service not configured', 'Please set OCR_SPACE_API_KEY in environment variables', 503],
+        OCR_DAILY_LIMIT:    ['OCR daily limit exceeded', 'OCR.Space free API daily limit reached. Try again tomorrow.', 503],
+        OCR_AUTH_FAILED:    ['OCR API key invalid', 'Please check your OCR_SPACE_API_KEY', 503],
+        OCR_NETWORK_ERROR:  ['OCR service unavailable', 'Network error connecting to OCR service', 503],
+        OCR_TIMEOUT:        ['OCR service timed out', 'The image took too long to process. Try a smaller image.', 503],
+        OCR_FAILED:         ['OCR processing failed', ocrError.message || 'Failed to extract text from image', 500],
+      };
+      const [error, details, status] = ocrMessages[ocrError.code] || ['Scan processing failed', 'OCR extraction failed', 500];
+      return res.status(status).json({ error, details, requestId: req.id });
     }
 
-    // If OCR returns empty/garbage, return a friendly message
     if (!extractedText || extractedText.length < 3) {
       return res.status(422).json({
         error: 'Unable to read the label text. Try better lighting, move closer, or hold the camera steady.',
@@ -114,101 +61,69 @@ exports.scanImage = async (req, res) => {
       });
     }
 
-    // Extract ingredients section from OCR text
     const ingredientsText = extractIngredientsSection(extractedText);
-
-    // Get user ID if authenticated
     const userId = isAuthenticated ? req.user.id : null;
     const productCategory = req.body.productCategory || null;
-
-    // Perform full analysis: dataset + AI for unmatched
     const analysis = await performFullAnalysis(ingredientsText);
 
     let scanId = null;
     let saved = false;
 
-    // Only save to database if user is authenticated
     if (isAuthenticated) {
+      let client;
       try {
-        // Save scan to database within a transaction
+        client = await db.pool.connect();
         await client.query('BEGIN');
 
-        // Determine overall risk level
-        const overallRisk = analysis.risk_level;
-
-        // Insert scan record
         const scanResult = await client.query(
           'INSERT INTO scans (user_id, image_path, ocr_text, product_category, overall_risk) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-          [userId, req.file ? req.file.originalname : null, extractedText, productCategory, overallRisk]
+          [userId, req.file.originalname ?? null, extractedText, productCategory, analysis.risk_level]
         );
         scanId = scanResult.rows[0].id;
 
-        // Insert scan_ingredients for each analyzed ingredient
-        const allIngredients = analysis.ingredients || [];
-        if (allIngredients.length > 0) {
-          for (const result of allIngredients) {
-            // Determine risk value for database
-            const riskValue = mapStatusToDbValue(result.status);
-            
-            // Try to find existing ingredient or insert new
-            let ingredientResult = await client.query(
-              'SELECT id FROM ingredients WHERE LOWER(name) = LOWER($1)',
-              [result.name]
+        for (const result of (analysis.ingredients || [])) {
+          const riskValue = mapStatusToDbValue(result.status);
+          let ingredientResult = await client.query(
+            'SELECT id FROM ingredients WHERE LOWER(name) = LOWER($1)', [result.name]
+          );
+          let ingredientId;
+          if (ingredientResult.rows.length === 0) {
+            const newIng = await client.query(
+              'INSERT INTO ingredients (name, normalized_name, risk) VALUES ($1, $2, $3) RETURNING id',
+              [result.name, result.name.toLowerCase(), riskValue]
             );
-
-            let ingredientId;
-            if (ingredientResult.rows.length === 0) {
-              const newIngredient = await client.query(
-                'INSERT INTO ingredients (name, normalized_name, risk) VALUES ($1, $2, $3) RETURNING id',
-                [result.name, result.name.toLowerCase(), riskValue]
-              );
-              ingredientId = newIngredient.rows[0].id;
-            } else {
-              ingredientId = ingredientResult.rows[0].id;
-            }
-
-            // Insert scan_ingredient relationship
-            await client.query(
-              'INSERT INTO scan_ingredients (scan_id, ingredient_id, raw_text, risk) VALUES ($1, $2, $3, $4)',
-              [scanId, ingredientId, result.name, riskValue]
-            );
+            ingredientId = newIng.rows[0].id;
+          } else {
+            ingredientId = ingredientResult.rows[0].id;
           }
+          await client.query(
+            'INSERT INTO scan_ingredients (scan_id, ingredient_id, raw_text, risk) VALUES ($1, $2, $3, $4)',
+            [scanId, ingredientId, result.name, riskValue]
+          );
         }
 
         await client.query('COMMIT');
         saved = true;
       } catch (dbError) {
-        await client.query('ROLLBACK').catch(() => {});
-        console.warn(`Failed to save scan to database: ${dbError.message}`);
-        saved = false;
+        if (client) await client.query('ROLLBACK').catch(() => {});
+        console.warn(`Failed to save scan: ${dbError.message}`);
+      } finally {
+        if (client) client.release();
       }
     }
 
     res.json({
-      scanId,
-      saved,
-      mode,
-      extractedText,
-      ingredientsText,
-      productCategory,
+      scanId, saved, mode, extractedText, ingredientsText, productCategory,
       risk_level: analysis.risk_level,
       overallRisk: analysis.risk_level,
       ingredients: analysis.ingredients,
       summary: analysis.summary,
       source: analysis.source,
-      disclaimer:
-        'SafeScan provides informational guidance only and is not medical advice. If you have a reaction or concern, consult a healthcare professional.',
+      disclaimer: 'SafeScan provides informational guidance only and is not medical advice. If you have a reaction or concern, consult a healthcare professional.',
     });
   } catch (e) {
     console.error('Scan image error:', e.message);
-    
-    return res.status(500).json({
-      error: 'Scan processing failed',
-      details: 'An unexpected error occurred',
-      requestId: req.id,
-    });
-  } finally {
-    client.release();
+    return res.status(500).json({ error: 'Scan processing failed', details: 'An unexpected error occurred', requestId: req.id });
   }
 };
 
@@ -222,12 +137,9 @@ exports.scanImage = async (req, res) => {
  * If guest: returns results without saving
  */
 exports.analyzeText = async (req, res, next) => {
-  const client = await db.pool.connect();
-  
-  // Determine if user is authenticated
   const isAuthenticated = req.user && req.user.id;
   const mode = isAuthenticated ? 'user' : 'guest';
-  
+
   try {
     const { text, productCategory } = req.body || {};
     
@@ -249,60 +161,46 @@ exports.analyzeText = async (req, res, next) => {
     let scanId = null;
     let saved = false;
     
-    // Only save to database if user is authenticated
     if (isAuthenticated) {
+      let client;
       try {
+        client = await db.pool.connect();
         await client.query('BEGIN');
-        
-        // Determine overall risk level
-        const overallRisk = analysis.risk_level;
 
-        // Insert scan record with productCategory
         const scanResult = await client.query(
           'INSERT INTO scans (user_id, ocr_text, product_category, overall_risk) VALUES ($1, $2, $3, $4) RETURNING id',
-          [userId, text, productCategory || null, overallRisk]
+          [userId, text, productCategory || null, analysis.risk_level]
         );
         scanId = scanResult.rows[0].id;
 
-        // Insert scan_ingredients for each analyzed ingredient
-        const allIngredients = analysis.ingredients || [];
-        
-        if (allIngredients.length > 0) {
-          for (const ing of allIngredients) {
-            // Map risk to database value
-            const scanRisk = mapStatusToDbValue(ing.status);
-            
-            // Try to find existing ingredient or insert new
-            let ingredientResult = await client.query(
-              'SELECT id FROM ingredients WHERE LOWER(name) = LOWER($1)',
-              [ing.name]
+        for (const ing of (analysis.ingredients || [])) {
+          const scanRisk = mapStatusToDbValue(ing.status);
+          let ingredientResult = await client.query(
+            'SELECT id FROM ingredients WHERE LOWER(name) = LOWER($1)', [ing.name]
+          );
+          let ingredientId;
+          if (ingredientResult.rows.length === 0) {
+            const newIng = await client.query(
+              'INSERT INTO ingredients (name, normalized_name, risk) VALUES ($1, $2, $3) RETURNING id',
+              [ing.name, ing.name.toLowerCase(), scanRisk]
             );
-
-            let ingredientId;
-            if (ingredientResult.rows.length === 0) {
-              const newIngredient = await client.query(
-                'INSERT INTO ingredients (name, normalized_name, risk) VALUES ($1, $2, $3) RETURNING id',
-                [ing.name, ing.name.toLowerCase(), scanRisk]
-              );
-              ingredientId = newIngredient.rows[0].id;
-            } else {
-              ingredientId = ingredientResult.rows[0].id;
-            }
-
-            // Insert scan_ingredient relationship
-            await client.query(
-              'INSERT INTO scan_ingredients (scan_id, ingredient_id, raw_text, risk) VALUES ($1, $2, $3, $4)',
-              [scanId, ingredientId, ing.name, scanRisk]
-            );
+            ingredientId = newIng.rows[0].id;
+          } else {
+            ingredientId = ingredientResult.rows[0].id;
           }
+          await client.query(
+            'INSERT INTO scan_ingredients (scan_id, ingredient_id, raw_text, risk) VALUES ($1, $2, $3, $4)',
+            [scanId, ingredientId, ing.name, scanRisk]
+          );
         }
 
         await client.query('COMMIT');
         saved = true;
       } catch (dbError) {
-        await client.query('ROLLBACK').catch(() => {});
-        console.warn(`Failed to save scan to database: ${dbError.message}`);
-        saved = false;
+        if (client) await client.query('ROLLBACK').catch(() => {});
+        console.warn(`Failed to save scan: ${dbError.message}`);
+      } finally {
+        if (client) client.release();
       }
     }
 
@@ -329,8 +227,6 @@ exports.analyzeText = async (req, res, next) => {
     res.status(500).json({
       error: 'An error occurred while analyzing the text. Please try again.',
     });
-  } finally {
-    client.release();
   }
 };
 
