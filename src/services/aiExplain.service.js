@@ -3,7 +3,7 @@ const axios = require('axios');
 /**
  * AI Service for explaining ingredients using external AI provider
  * Supports OpenAI and other providers via HTTP API
- * 
+ *
  * Configuration (from environment variables):
  * - AI_API_KEY (required): API key for AI provider
  * - AI_PROVIDER (default "openai"): AI provider name
@@ -11,7 +11,7 @@ const axios = require('axios');
  * - MAX_AI_INGREDIENTS (default 25): Maximum ingredients per AI batch
  */
 
-const TIMEOUT_MS = 20000; // 20 seconds timeout
+const TIMEOUT_MS = 20000;
 const MAX_AI_INGREDIENTS = parseInt(process.env.MAX_AI_INGREDIENTS || '25', 10);
 
 /**
@@ -43,26 +43,20 @@ function normalizeName(name) {
   return normalized;
 }
 
-// Get API key - ONLY from AI_API_KEY (no fallback)
 function getApiKey() {
   return process.env.AI_API_KEY;
 }
 
-// Check if API key is configured
 function isApiKeyConfigured() {
   return !!process.env.AI_API_KEY;
 }
 
-// Get provider configuration and log it (never log the API key value)
 function getProviderConfig() {
   const provider = process.env.AI_PROVIDER || 'openai';
   const apiKey = getApiKey();
   const model = process.env.AI_MODEL || 'gpt-4o-mini';
-  
-  // Log provider, model, and whether API key is set (NEVER log the key value)
   const apiKeyStatus = isApiKeyConfigured() ? 'set' : 'not set';
   console.log(`[AI Service] Provider: ${provider}, Model: ${model}, AI_API_KEY: ${apiKeyStatus}`);
-  
   return { provider, apiKey, model };
 }
 
@@ -258,80 +252,44 @@ async function callAIWithRetry(provider, apiKey, model, prompt, retryCount) {
   }
 }
 
-/**
- * Call the AI provider API
- * @param {string} provider - AI provider
- * @param {string} apiKey - API key
- * @param {string} model - Model name
- * @param {string} prompt - Prompt
- * @returns {Promise<string>} - AI response text
- */
+const PROVIDER_ENDPOINTS = {
+  openai: 'https://api.openai.com/v1/chat/completions',
+  groq:   'https://api.groq.com/openai/v1/chat/completions',
+};
+
 async function callAIProvider(provider, apiKey, model, prompt) {
-  if (provider === 'openai') {
-    return callOpenAI(apiKey, model, prompt);
-  }
-  
-  // Default to OpenAI-compatible API
-  return callOpenAI(apiKey, model, prompt);
+  const endpoint = PROVIDER_ENDPOINTS[provider] || PROVIDER_ENDPOINTS.openai;
+  return callOpenAICompatible(endpoint, apiKey, model, prompt, provider);
 }
 
-/**
- * Call OpenAI API
- * @param {string} apiKey - OpenAI API key
- * @param {string} model - Model name
- * @param {string} prompt - Prompt
- * @returns {Promise<string>} - AI response text
- */
-async function callOpenAI(apiKey, model, prompt) {
+async function callOpenAICompatible(endpoint, apiKey, model, prompt, providerName) {
   try {
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      endpoint,
       {
-        model: model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+        model,
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 2000,
       },
       {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: TIMEOUT_MS
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        timeout: TIMEOUT_MS,
       }
     );
 
     if (!response.data?.choices?.[0]?.message?.content) {
-      throw new Error('Invalid OpenAI response format');
+      throw new Error(`Invalid ${providerName} response format`);
     }
 
     return response.data.choices[0].message.content;
   } catch (error) {
-    // Better error logging for OpenAI call
     if (error.response) {
-      // Server responded with error status
       const statusCode = error.response.status;
-      let responseBody = '';
-      try {
-        responseBody = JSON.stringify(error.response.data);
-      } catch (e) {
-        responseBody = String(error.response.data);
-      }
-      // Truncate to 500 chars
-      responseBody = responseBody.substring(0, 500);
-      
-      console.error(`[OpenAI Error] Status: ${statusCode}, Response: ${responseBody}, Message: ${error.message}`);
-    } else if (error.request) {
-      // Request was made but no response received
-      console.error(`[OpenAI Error] No response received, Message: ${error.message}`);
+      const responseBody = JSON.stringify(error.response.data).substring(0, 500);
+      console.error(`[${providerName} Error] Status: ${statusCode}, Response: ${responseBody}`);
     } else {
-      // Error setting up request
-      console.error(`[OpenAI Error] Request setup failed, Message: ${error.message}`);
+      console.error(`[${providerName} Error] ${error.message}`);
     }
     throw error;
   }

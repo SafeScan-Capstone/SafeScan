@@ -387,6 +387,19 @@ async function performFullAnalysis(text) {
           reason: aiResult.explanation || '',
           source: 'ai'
         }));
+
+        // Cache AI results back into dataset_rows so future scans are instant
+        for (const result of aiResults) {
+          if (result.status === 'Unknown') continue;
+          const riskMap = { Safe: 'LOW', Risky: 'MEDIUM', Restricted: 'HIGH' };
+          const riskLevel = riskMap[result.status] || 'LOW';
+          db.query(
+            `INSERT INTO dataset_rows (ingredient_name, risk_level, reason)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (ingredient_name) DO NOTHING`,
+            [result.name.toLowerCase(), riskLevel, result.reason]
+          ).catch(() => {});
+        }
       }
     } catch (aiError) {
       console.warn(`AI classification failed: ${aiError.message}`);
