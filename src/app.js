@@ -71,6 +71,17 @@ app.use(rateLimit({
 // API Docs (Swagger)
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { explorer: true }));
 
+// Temporary DB diagnostic (remove after debugging)
+const db = require('./db');
+app.get('/api/dbtest', async (req, res) => {
+  try {
+    const result = await db.query('SELECT NOW() as time');
+    res.json({ ok: true, time: result.rows[0].time, dbUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':***@') : 'not set' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message, code: e.code, dbUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':***@') : 'not set' });
+  }
+});
+
 // Routes
 const routes = require('./routes');
 app.use('/api', routes);
