@@ -25,6 +25,11 @@ if (sslEnabled) {
   poolConfig.ssl = { rejectUnauthorized: false };
 }
 
+// Serverless-safe pool settings: short pool, longer connect timeout
+poolConfig.max = 3;
+poolConfig.connectionTimeoutMillis = 10000;
+poolConfig.idleTimeoutMillis = 10000;
+
 // Helpful startup log (no password)
 try {
   if (poolConfig.connectionString) {
