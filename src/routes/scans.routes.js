@@ -1,7 +1,7 @@
 const router = require('express').Router();
-const { getScanHistory } = require('../controllers/scanHistory.controller');
+const { getScanHistory, getScanById } = require('../controllers/scanHistory.controller');
 
-// Get scan history for logged-in user
 router.get('/', getScanHistory);
+router.get('/:id', getScanById);
 
 module.exports = router;

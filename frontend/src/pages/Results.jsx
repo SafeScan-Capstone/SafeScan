@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import apiUrl from '../utils/apiUrl'
 import SummaryBadge from "../components/ingredients/SummaryBadge";
 import IngredientResultCard from "../components/ingredients/IngredientResultCard";
 import Button from "../components/ui/Button";
@@ -92,7 +93,9 @@ function mapSafety(item) {
 
 function transformResults(data) {
     const seen = new Set()
-    return (data.results ?? data.matched_ingredients ?? [])
+    // history detail uses `ingredients[]`, live scan uses `results[]` or `matched_ingredients[]`
+    const source = data.ingredients ?? data.results ?? data.matched_ingredients ?? []
+    return source
         .filter((item) => {
             const name = (item.ingredient ?? item.name ?? '').toLowerCase()
             if (!name || seen.has(name)) return false
@@ -114,15 +117,35 @@ export default function Results() {
     const { id } = useParams()
     const navigate = useNavigate()
     const location = useLocation()
-    const data = location.state?.result
+    const [data, setData] = useState(location.state?.result ?? null)
+    const [loading, setLoading] = useState(!location.state?.result)
 
-    // Use scanned image if available, otherwise pick a placeholder bottle
     const bottleImage = useMemo(() => sessionStorage.getItem('safescan_last_image') ?? getSessionBottle(), [])
 
-    if (!data) {
-        navigate('/scan-home', { replace: true })
-        return null
+    useEffect(() => {
+        if (data) return
+        if (!id) { navigate('/scan-home', { replace: true }); return }
+        const token = localStorage.getItem('token')
+        if (!token) { navigate('/login', { replace: true }); return }
+        fetch(`${apiUrl}/api/scans/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(json => {
+                if (json.error) { navigate('/history', { replace: true }); return }
+                setData(json)
+            })
+            .catch(() => navigate('/history', { replace: true }))
+            .finally(() => setLoading(false))
+    }, [id])
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            </div>
+        )
     }
+
+    if (!data) return null
 
     const riskLevel = data.risk_level ?? 'LOW'
     const ingredients = transformResults(data)

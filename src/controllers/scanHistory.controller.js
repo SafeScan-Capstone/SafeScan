@@ -1,5 +1,83 @@
 const db = require('../db');
 
+function capitalizeRisk(str) {
+  if (!str) return 'Unknown';
+  const s = str.toLowerCase();
+  if (s === 'safe') return 'Safe';
+  if (s === 'risky') return 'Risky';
+  if (s === 'restricted') return 'Restricted';
+  return 'Unknown';
+}
+
+/**
+ * GET /api/scans/:id
+ * Protected route (JWT required)
+ * Returns full details of a single scan including all ingredients
+ */
+exports.getScanById = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const scanId = parseInt(req.params.id, 10);
+
+    if (!scanId || isNaN(scanId)) {
+      return res.status(400).json({ error: 'Invalid scan ID' });
+    }
+
+    const scanResult = await db.query(
+      `SELECT id, created_at, ocr_text, product_category, overall_risk
+       FROM scans WHERE id = $1 AND user_id = $2`,
+      [scanId, userId]
+    );
+
+    if (scanResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    const scan = scanResult.rows[0];
+
+    const ingredientsResult = await db.query(
+      `SELECT si.raw_text AS name, si.risk AS status,
+              COALESCE(dr.reason, i.notes, '') AS reason
+       FROM scan_ingredients si
+       LEFT JOIN ingredients i ON si.ingredient_id = i.id
+       LEFT JOIN dataset_rows dr ON LOWER(si.raw_text) = dr.ingredient_name
+       WHERE si.scan_id = $1
+       ORDER BY si.id`,
+      [scanId]
+    );
+
+    const ingredients = ingredientsResult.rows.map(row => ({
+      name: row.name,
+      status: capitalizeRisk(row.status),
+      reason: row.reason || '',
+    }));
+
+    const summary = {
+      safeCount: ingredients.filter(i => i.status === 'Safe').length,
+      riskyCount: ingredients.filter(i => i.status === 'Risky').length,
+      restrictedCount: ingredients.filter(i => i.status === 'Restricted').length,
+      unknownCount: ingredients.filter(i => i.status === 'Unknown').length,
+    };
+
+    res.json({
+      scanId: scan.id,
+      createdAt: scan.created_at,
+      extractedText: scan.ocr_text,
+      productCategory: scan.product_category,
+      risk_level: scan.overall_risk || 'LOW',
+      overallRisk: scan.overall_risk || 'LOW',
+      ingredients,
+      summary,
+      saved: true,
+      mode: 'user',
+      disclaimer: 'SafeScan provides informational guidance only and is not medical advice.',
+    });
+  } catch (e) {
+    console.error('Error fetching scan by ID:', e.message);
+    res.status(500).json({ error: 'Failed to fetch scan' });
+  }
+};
+
 /**
  * GET /api/scans
  * Protected route (JWT required)

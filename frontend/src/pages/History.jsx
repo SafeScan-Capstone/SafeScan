@@ -47,10 +47,14 @@ export default function History() {
           const s = item.summary ?? {}
           const safety = s.restrictedCount > 0 ? 'restricted' : s.riskyCount > 0 ? 'risky' : 'safe'
           const ingredientCount = s.safeCount + s.riskyCount + s.restrictedCount + (s.unknownCount ?? 0)
+          const date = item.createdAt ? new Date(item.createdAt) : null
+          const time = date
+            ? date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+            : 'Unknown date'
           return {
             id: item.id,
             productName: item.productCategory ?? 'Scanned Product',
-            scannedAt: item.createdAt,
+            time,
             ingredientCount,
             safety,
           }

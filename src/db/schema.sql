@@ -60,3 +60,8 @@ CREATE TABLE IF NOT EXISTS dataset_rows (
 -- Indexes for efficient lookups
 CREATE INDEX IF NOT EXISTS idx_dataset_rows_ingredient_name ON dataset_rows (ingredient_name);
 CREATE INDEX IF NOT EXISTS idx_dataset_rows_risk_level ON dataset_rows (risk_level);
+
+-- Scan risk column (migration-safe)
+ALTER TABLE IF EXISTS scans ADD COLUMN IF NOT EXISTS overall_risk TEXT;
+CREATE INDEX IF NOT EXISTS idx_scans_user_id ON scans (user_id);
+CREATE INDEX IF NOT EXISTS idx_scan_ingredients_scan_id ON scan_ingredients (scan_id);
