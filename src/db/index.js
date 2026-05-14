@@ -22,7 +22,10 @@ const poolConfig = hasDatabaseUrl
 // Enable SSL when on Render OR when DATABASE_URL exists (Render Postgres typically requires SSL)
 const sslEnabled = isOnRender || hasDatabaseUrl;
 if (sslEnabled) {
-  poolConfig.ssl = { rejectUnauthorized: false };
+  // Try both SSL modes for compatibility
+  poolConfig.ssl = process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
+    ? true
+    : { rejectUnauthorized: false };
 }
 
 // Serverless-safe pool settings: short pool, longer connect timeout
