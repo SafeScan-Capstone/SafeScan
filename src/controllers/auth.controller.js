@@ -67,8 +67,8 @@ exports.register = async (req, res) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
-    // Hash password using bcrypt
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password using bcrypt (8 rounds — fast enough for serverless, still secure)
+    const hashedPassword = await bcrypt.hash(password, 8);
 
     // Insert new user with consent (POPIA/GDPR compliance)
     let newUser;
