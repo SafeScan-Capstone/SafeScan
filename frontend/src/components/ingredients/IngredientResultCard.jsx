@@ -49,7 +49,15 @@ const FALLBACK_DESCRIPTION = {
   unknown: 'We could not verify this ingredient. If you have concerns, consult a dermatologist.',
 }
 
-export default function IngredientResultCard({ name, safety = 'unknown', description }) {
+export default function IngredientResultCard({
+  name,
+  safety = 'unknown',
+  purpose,
+  description,
+  risks,
+  recommendation,
+  confidence,
+}) {
   const resolvedSafety = ['safe', 'risky', 'restricted', 'unknown'].includes(safety) ? safety : 'unknown'
 
   const dot = INGREDIENT_DOT[resolvedSafety]
@@ -57,6 +65,11 @@ export default function IngredientResultCard({ name, safety = 'unknown', descrip
   const border = INGREDIENT_BORDER[resolvedSafety]
   const displayDescription = description || FALLBACK_DESCRIPTION[resolvedSafety]
   const bgHover = INGREDIENT_BG_HOVER[safety] ?? INGREDIENT_BG_HOVER.unknown
+
+  const safeRisks = Array.isArray(risks) ? risks.filter(Boolean) : []
+  const safePurpose = purpose || ''
+  const safeRecommendation = recommendation || ''
+  const safeConfidence = typeof confidence === 'number' ? confidence : null
 
   return (
     <motion.div
@@ -66,13 +79,46 @@ export default function IngredientResultCard({ name, safety = 'unknown', descrip
       className={`relative rounded-2xl px-4 py-3.5 border ${border} shadow-sm transition-colors ${bgHover}`}
     >
       {cornerIcon}
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dot}`} />
-        <p className="text-sm font-bold text-text-title">{name}</p>
+
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <div className="flex items-center gap-2">
+          <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dot}`} />
+          <p className="text-sm font-bold text-text-title">{name}</p>
+        </div>
+        {safeConfidence !== null && (
+          <span className="text-[11px] font-bold px-2 py-1 rounded-full border border-gray-200 bg-white/60">
+            {safeConfidence}% confidence
+          </span>
+        )}
       </div>
-      <p className="text-xs text-text-body leading-relaxed pl-4">
+
+      {safePurpose && (
+        <p className="text-[11px] text-text-secondary pl-4 mb-2">
+          Purpose: {safePurpose}
+        </p>
+      )}
+
+      <p className="text-xs text-text-body leading-relaxed pl-4 mb-2">
         {displayDescription}
       </p>
+
+      {safeRisks.length > 0 && (
+        <div className="pl-4 mb-2">
+          <p className="text-[11px] font-bold text-text-secondary mb-1">Potential risks</p>
+          <ul className="list-disc pl-4 text-[11px] text-text-body">
+            {safeRisks.slice(0, 3).map((r, idx) => (
+              <li key={idx}>{r}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {safeRecommendation && (
+        <p className="text-[11px] font-bold text-primary pl-4">
+          Recommendation: <span className="font-normal">{safeRecommendation}</span>
+        </p>
+      )}
     </motion.div>
   )
 }
+

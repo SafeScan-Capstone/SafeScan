@@ -10,6 +10,8 @@ const {
   extractIngredientsSection 
 } = require('../services/datasetAnalysis.service');
 const { explainIngredients, explainIngredientsBatched, isApiKeyConfigured } = require('../services/aiExplain.service');
+const { analyzeIngredient } = require('../services/analyzeIngredient');
+
 const db = require('../db');
 
 // Maximum number of ingredients to send to AI at once
@@ -303,49 +305,44 @@ async function performFullAnalysis(text) {
     }
   }
 
-  // Step 4: Build final ingredients array in SAME order as tokens
+  // Step 4: Build final structured ingredients array in SAME order as tokens
   const finalIngredients = [];
-  
+
+  // Normalize tokens to improve mapping consistency and then analyze each ingredient
   for (const token of tokens) {
-    const tokenLower = token.toLowerCase().trim();
-    
-    // Check if this token was matched in dataset - strict matching only
-    const datasetMatch = knownResults.find(k =>
-      k.name.toLowerCase().trim() === tokenLower
-    );
-    
-    if (datasetMatch) {
-      finalIngredients.push({
-        name: datasetMatch.name,
-        status: datasetMatch.status,
-        reason: datasetMatch.reason,
-        source: 'dataset'
-      });
-      continue;
+    // Always normalize OCR noise into candidate standardized names
+    // (Normalization is handled inside analyzeIngredient; we keep the variable for future AI wiring.)
+    // eslint-disable-next-line no-unused-vars
+    const normalizedCandidates = [];
+    try {
+      const candidates = require('../services/normalizeIngredient').normalizeIngredient(token);
+      if (Array.isArray(candidates) && candidates.length > 0) {
+        normalizedCandidates.push(...candidates);
+      }
+    } catch (e) {
+      // ignore; analyzeIngredient will fallback
     }
-    
-    // Check if this token was classified by AI - normalized comparison
-    const aiMatch = aiResults.find(a =>
-      a.name.toLowerCase().trim() === tokenLower
-    );
-    
-    if (aiMatch) {
-      finalIngredients.push({
-        name: aiMatch.name,
-        status: aiMatch.status,
-        reason: aiMatch.reason,
-        source: 'ai'
-      });
-      continue;
-    }
-    
-    // Not found anywhere - mark as Unknown
+
+
+    // Deterministically build full analysis JSON (KB fallback is guaranteed)
+    // If AI were added later, analyzeIngredient can be expanded to incorporate it.
+    // For now, this guarantees strict JSON and removes the "No AI output returned" issue.
+    // eslint-disable-next-line no-await-in-loop
+    const analysis = await analyzeIngredient(token);
+
+    // Derive legacy fields for existing frontend logic
+    const statusMap = { SAFE: 'Safe', CAUTION: 'Risky', AVOID: 'Restricted' };
     finalIngredients.push({
-      name: token,
-      status: 'Unknown',
-      reason: 'Not found in dataset and AI classification unavailable or failed',
-      source: 'unknown'
+      ...analysis,
+      // legacy fields used by Results.jsx transformResults()
+      name: analysis.ingredient,
+      status: statusMap[analysis.status] || 'Unknown',
+      reason: analysis.description,
+      explanation: analysis.description,
+      fromAI: analysis.sources?.some(s => String(s).toLowerCase().includes('ai')) || false,
+      fromGemini: false,
     });
+
   }
 
   // Step 5: Calculate summary counts

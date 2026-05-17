@@ -107,11 +107,16 @@ function transformResults(data) {
             id: index + 1,
             name: item.ingredient ?? item.name,
             safety: mapSafety(item),
-            description: item.explanation ?? item.reason ?? '',
+            purpose: item.purpose ?? '',
+            description: item.description ?? item.explanation ?? item.reason ?? '',
+            risks: item.risks ?? item.riskNotes ?? [],
+            recommendation: item.recommendation ?? '',
+            confidence: item.confidence ?? item.score ?? null,
             fromAI: item.fromAI ?? false,
             fromGemini: item.fromGemini ?? false,
         }))
 }
+
 
 export default function Results() {
     const { id } = useParams()
